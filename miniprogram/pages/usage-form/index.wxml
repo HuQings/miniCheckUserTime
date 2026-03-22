@@ -1,0 +1,160 @@
+<view class="form-container">
+  <view class="header">
+    <view class="day-badge">第{{currentDay}}天</view>
+    <view class="header-icon">📱</view>
+    <view class="header-title">请填写你的手机使用情况</view>
+    <view class="header-subtitle">填写准确时长，获取个性化建议</view>
+    
+    <view class="progress-section">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{(currentDay / period) * 100}}"></view>
+      </view>
+      <view class="progress-info">进度: {{currentDay}}/{{period}} 天</view>
+    </view>
+  </view>
+
+  <view class="form-content">
+    <view class="form-section">
+      <view class="section-title">基础使用时长</view>
+      
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">📅</text>
+          <text class="label-text">工作日日均使用时长</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.weekdayHours}}"
+            bindinput="onWeekdayHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">🌴</text>
+          <text class="label-text">周末日均使用时长</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.weekendHours}}"
+            bindinput="onWeekendHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-section">
+      <view class="section-title">使用时长分配</view>
+      
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">💬</text>
+          <text class="label-text">社交娱乐（微信、抖音等）</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.socialHours}}"
+            bindinput="onSocialHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">💼</text>
+          <text class="label-text">工作学习（办公、学习软件）</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.workHours}}"
+            bindinput="onWorkHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">🎮</text>
+          <text class="label-text">游戏娱乐</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.gameHours}}"
+            bindinput="onGameHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">📺</text>
+          <text class="label-text">视频影音</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.videoHours}}"
+            bindinput="onVideoHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">
+          <text class="label-icon">🛒</text>
+          <text class="label-text">购物浏览</text>
+        </view>
+        <view class="input-wrapper">
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入" 
+            value="{{formData.shopHours}}"
+            bindinput="onShopHoursChange"
+          />
+          <text class="input-unit">小时</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="submit-btn" bindtap="onSubmit" disabled="{{isSubmitting}}">
+      <text class="btn-text">{{isSubmitting ? '分析中...' : '提交分析'}}</text>
+      <text class="btn-arrow" wx:if="{{!isSubmitting}}">→</text>
+    </button>
+  </view>
+
+  <advice-modal 
+    show="{{showModal}}" 
+    adviceData="{{adviceData}}"
+    period="{{period}}"
+    bind:close="onCloseModal"
+    bind:retry="onRetry"
+    bind:finish="onFinish"
+  />
+</view>

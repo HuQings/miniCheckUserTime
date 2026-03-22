@@ -1,0 +1,54 @@
+<view class="modal-mask" wx:if="{{show}}" bindtap="onMaskTap">
+  <view class="modal-content" catchtap="onContentTap">
+    <view class="modal-header">
+      <view class="header-icon">{{adviceData.isFinal ? '🏆' : '✨'}}</view>
+      <view class="header-title">{{adviceData.isFinal ? period + '天打卡完成！' : '分析结果'}}</view>
+    </view>
+
+    <scroll-view class="modal-body" scroll-y>
+      <view class="summary-card">
+        <view class="summary-title">{{adviceData.isFinal ? period + '天综合评估' : '总体评估'}}</view>
+        <view class="summary-rating">
+          <text class="rating-text">{{adviceData.summary.rating}}</text>
+          <text class="rating-emoji">{{adviceData.summary.emoji}}</text>
+        </view>
+        <view class="summary-text">{{adviceData.summary.text}}</view>
+      </view>
+
+      <view class="section-title">{{adviceData.isFinal ? '今日建议' : '详细建议'}}</view>
+      
+      <view class="advice-list">
+        <view class="advice-item" wx:for="{{adviceData.adviceList}}" wx:key="index">
+          <view class="advice-header">
+            <view class="advice-icon">{{item.icon}}</view>
+            <view class="advice-type">{{item.type}}</view>
+            <view class="advice-tag advice-tag-{{item.level}}">{{item.levelText}}</view>
+          </view>
+          <view class="advice-content">{{item.content}}</view>
+          <view class="advice-tips" wx:if="{{item.tips}}">
+            <view class="tips-label">💡 小贴士：</view>
+            <view class="tips-text">{{item.tips}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="congrats-section" wx:if="{{adviceData.isFinal}}">
+        <view class="congrats-icon">🎉</view>
+        <view class="congrats-text">感谢您的参与！</view>
+        <view class="congrats-desc">持续关注手机使用习惯，保持健康的生活方式</view>
+      </view>
+    </scroll-view>
+
+    <view class="modal-footer">
+      <button class="btn btn-retry" bindtap="onRetry" wx:if="{{!adviceData.isFinal}}">
+        <text>返回</text>
+      </button>
+      <button class="btn btn-finish" bindtap="onFinish" wx:if="{{adviceData.isFinal}}">
+        <text>完成挑战</text>
+      </button>
+      <button class="btn btn-close" bindtap="onClose">
+        <text>{{adviceData.isFinal ? '关闭' : '知道了'}}</text>
+      </button>
+    </view>
+  </view>
+</view>

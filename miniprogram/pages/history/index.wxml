@@ -1,0 +1,91 @@
+<view class="history-container">
+  <view class="header">
+    <view class="header-icon">📊</view>
+    <view class="header-title">{{period}}天打卡记录</view>
+    <view class="header-subtitle">查看您的手机使用情况</view>
+  </view>
+
+  <view class="history-content" wx:if="{{records.length > 0}}">
+    <view class="stats-section">
+      <view class="stat-card">
+        <view class="stat-value">{{completedDays}}/{{period}}</view>
+        <view class="stat-label">已完成天数</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{avgScore}}</view>
+        <view class="stat-label">平均得分</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{avgHours}}</view>
+        <view class="stat-label">日均时长</view>
+      </view>
+    </view>
+
+    <view class="records-section">
+      <view class="section-title">每日详情</view>
+      
+      <view class="record-item" wx:for="{{records}}" wx:key="_id">
+        <view class="record-header">
+          <view class="record-day">第{{item.day}}天</view>
+          <view class="record-date">{{item.createTime}}</view>
+        </view>
+        
+        <view class="record-score">
+          <view class="score-label">得分</view>
+          <view class="score-value score-{{getScoreLevel(item.score)}}">{{item.score}}</view>
+        </view>
+
+        <view class="record-details">
+          <view class="detail-row">
+            <view class="detail-label">日均使用时长</view>
+            <view class="detail-value">{{item.avgDailyHours}} 小时</view>
+          </view>
+          <view class="detail-row">
+            <view class="detail-label">总使用时长</view>
+            <view class="detail-value">{{item.totalUsageHours}} 小时</view>
+          </view>
+        </view>
+
+        <view class="record-usage">
+          <view class="usage-title">时长分布</view>
+          <view class="usage-grid">
+            <view class="usage-item">
+              <view class="usage-icon">💬</view>
+              <view class="usage-value">{{item.usageData.socialHours}}h</view>
+              <view class="usage-label">社交</view>
+            </view>
+            <view class="usage-item">
+              <view class="usage-icon">💼</view>
+              <view class="usage-value">{{item.usageData.workHours}}h</view>
+              <view class="usage-label">工作</view>
+            </view>
+            <view class="usage-item">
+              <view class="usage-icon">🎮</view>
+              <view class="usage-value">{{item.usageData.gameHours}}h</view>
+              <view class="usage-label">游戏</view>
+            </view>
+            <view class="usage-item">
+              <view class="usage-icon">📺</view>
+              <view class="usage-value">{{item.usageData.videoHours}}h</view>
+              <view class="usage-label">视频</view>
+            </view>
+            <view class="usage-item">
+              <view class="usage-icon">🛒</view>
+              <view class="usage-value">{{item.usageData.shopHours}}h</view>
+              <view class="usage-label">购物</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:else>
+    <view class="empty-icon">📝</view>
+    <view class="empty-text">暂无打卡记录</view>
+    <view class="empty-desc">开始填写手机使用情况吧</view>
+    <button class="start-btn" bindtap="goToWelcome">
+      <text>开始打卡</text>
+    </button>
+  </view>
+</view>

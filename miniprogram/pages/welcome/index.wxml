@@ -1,0 +1,67 @@
+<view class="welcome-container">
+  <view class="gradient-bg"></view>
+
+  <view class="content">
+    <view class="logo-section">
+      <view class="phone-icon">
+        <view class="phone-inner"></view>
+      </view>
+      <view class="app-name">手机使用检测</view>
+      <view class="app-slogan">了解你的数字生活</view>
+    </view>
+
+    <view class="user-info" wx:if="{{hasLogin && userInfo}}">
+      <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+      <view class="user-name">{{userInfo.nickName}}</view>
+      <view class="login-status">✓ 已登录</view>
+    </view>
+
+    <view class="checkin-section">
+      <view class="section-title">
+        <text>{{period}}天打卡挑战</text>
+        <text class="progress-text">{{completedDays}}/{{period}}</text>
+      </view>
+      <view class="checkin-grid">
+        <view class="checkin-item {{item.completed ? 'completed' : ''}} {{item.current ? 'current' : ''}}" wx:for="{{checkinDays}}" wx:key="day">
+          <view class="day-label">第{{item.day}}天</view>
+          <view class="day-status">
+            <text wx:if="{{item.completed}}">✓</text>
+            <text wx:elif="{{item.current}}">●</text>
+            <text wx:else>○</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="features">
+      <view class="feature-item">
+        <view class="feature-icon">📊</view>
+        <view class="feature-text">智能分析</view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">💡</view>
+        <view class="feature-text">个性化建议</view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">🎯</view>
+        <view class="feature-text">改善习惯</view>
+      </view>
+    </view>
+
+    <view class="description">
+      <text>只需花费2分钟，即可了解你的手机使用习惯</text>
+    </view>
+
+    <view class="btn-section">
+      <button class="start-btn" bindtap="goToForm" disabled="{{isLoading}}">
+        <text class="btn-text">{{isLoading ? '登录中...' : (hasLogin ? '继续检测' : '开始检测')}}</text>
+        <text class="btn-arrow" wx:if="{{!isLoading}}">→</text>
+      </button>
+
+      <button class="history-btn" bindtap="goToHistory" wx:if="{{hasLogin && completedDays > 0}}">
+        <text class="btn-text">查看记录</text>
+        <text class="btn-arrow">→</text>
+      </button>
+    </view>
+  </view>
+</view>
