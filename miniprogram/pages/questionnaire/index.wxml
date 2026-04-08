@@ -1,0 +1,93 @@
+<view class="container">
+  <view class="header">
+    <view class="day-badge">{{phaseText}}</view>
+    <view class="header-title">{{questionnaireTitle}}</view>
+    <view class="header-subtitle">请根据您的真实体验作答</view>
+  </view>
+
+  <view class="form-content">
+    <view class="usage-section" wx:if="{{showUsageRecord}}">
+      <view class="section-title">今日短视频使用情况</view>
+
+      <view class="usage-category">
+        <view class="category-title">休闲娱乐类</view>
+        <view class="category-row">
+          <text class="category-label">当日使用频次</text>
+          <input class="category-input" type="number" placeholder="请输入" value="{{usageData.entertainment.frequency}}" bindinput="onUsageChange" data-type="entertainment" data-field="frequency"/>
+          <text class="category-unit">次</text>
+        </view>
+        <view class="category-row">
+          <text class="category-label">当日使用时长</text>
+          <input class="category-input" type="digit" placeholder="请输入" value="{{usageData.entertainment.hours}}" bindinput="onUsageChange" data-type="entertainment" data-field="hours"/>
+          <text class="category-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="usage-category">
+        <view class="category-title">学习工作类</view>
+        <view class="category-row">
+          <text class="category-label">当日使用频次</text>
+          <input class="category-input" type="number" placeholder="请输入" value="{{usageData.learning.frequency}}" bindinput="onUsageChange" data-type="learning" data-field="frequency"/>
+          <text class="category-unit">次</text>
+        </view>
+        <view class="category-row">
+          <text class="category-label">当日使用时长</text>
+          <input class="category-input" type="digit" placeholder="请输入" value="{{usageData.learning.hours}}" bindinput="onUsageChange" data-type="learning" data-field="hours"/>
+          <text class="category-unit">小时</text>
+        </view>
+      </view>
+
+      <view class="usage-category">
+        <view class="category-title">社交类</view>
+        <view class="category-row">
+          <text class="category-label">当日使用频次</text>
+          <input class="category-input" type="number" placeholder="请输入" value="{{usageData.social.frequency}}" bindinput="onUsageChange" data-type="social" data-field="frequency"/>
+          <text class="category-unit">次</text>
+        </view>
+        <view class="category-row">
+          <text class="category-label">当日使用时长</text>
+          <input class="category-input" type="digit" placeholder="请输入" value="{{usageData.social.hours}}" bindinput="onUsageChange" data-type="social" data-field="hours"/>
+          <text class="category-unit">小时</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="question-section" wx:for="{{questions}}" wx:key="index">
+      <view class="question-title">{{index + 1}}. {{item}}</view>
+      <view class="option-list">
+        <view class="option-item {{answers[index] === 1 ? 'selected' : ''}}" bindtap="onSelectOption" data-index="{{index}}" data-value="1">
+          <radio value="1" checked="{{answers[index] === 1}}" color="#667eea"/>
+          <text>完全不符合</text>
+        </view>
+        <view class="option-item {{answers[index] === 2 ? 'selected' : ''}}" bindtap="onSelectOption" data-index="{{index}}" data-value="2">
+          <radio value="2" checked="{{answers[index] === 2}}" color="#667eea"/>
+          <text>不太符合</text>
+        </view>
+        <view class="option-item {{answers[index] === 3 ? 'selected' : ''}}" bindtap="onSelectOption" data-index="{{index}}" data-value="3">
+          <radio value="3" checked="{{answers[index] === 3}}" color="#667eea"/>
+          <text>不置可否</text>
+        </view>
+        <view class="option-item {{answers[index] === 4 ? 'selected' : ''}}" bindtap="onSelectOption" data-index="{{index}}" data-value="4">
+          <radio value="4" checked="{{answers[index] === 4}}" color="#667eea"/>
+          <text>比较符合</text>
+        </view>
+        <view class="option-item {{answers[index] === 5 ? 'selected' : ''}}" bindtap="onSelectOption" data-index="{{index}}" data-value="5">
+          <radio value="5" checked="{{answers[index] === 5}}" color="#667eea"/>
+          <text>完全符合</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="feedback-section" wx:if="{{showFeedback}}">
+      <view class="feedback-title">诚挚邀请您为本项目实施提出意见或建议</view>
+      <textarea class="feedback-textarea" placeholder="请输入您的建议..." value="{{feedback}}" bindinput="onFeedbackChange" auto-height/>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="submit-btn" bindtap="onSubmit" disabled="{{isSubmitting}}">
+      <text class="btn-text">{{isSubmitting ? '提交中...' : '提交'}}</text>
+      <text class="btn-arrow" wx:if="{{!isSubmitting}}">→</text>
+    </button>
+  </view>
+</view>

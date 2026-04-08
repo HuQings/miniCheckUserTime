@@ -1,0 +1,182 @@
+.container {
+  padding: 30rpx;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.header {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #fff;
+}
+
+.project-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.project-number {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.consent-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+}
+
+.consent-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+  text-align: center;
+}
+
+.consent-text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 30rpx;
+}
+
+.consent-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20rpx;
+}
+
+.consent-checkbox text {
+  margin-left: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.demographics-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.item-label {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 15rpx;
+  display: block;
+}
+
+.gender-options {
+  display: flex;
+  gap: 30rpx;
+}
+
+.gender-option {
+  display: flex;
+  align-items: center;
+}
+
+.gender-option text {
+  margin-left: 10rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.grade-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.grade-option {
+  padding: 15rpx 30rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.grade-option.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: #fff;
+}
+
+.usage-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+}
+
+.usage-category {
+  margin-bottom: 30rpx;
+}
+
+.category-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.category-label {
+  font-size: 26rpx;
+  color: #666;
+  width: 180rpx;
+}
+
+.category-input {
+  flex: 1;
+  border: 2rpx solid #ddd;
+  border-radius: 10rpx;
+  padding: 15rpx 20rpx;
+  font-size: 28rpx;
+}
+
+.category-unit {
+  font-size: 26rpx;
+  color: #999;
+  margin-left: 10rpx;
+}
+
+.btn-section {
+  padding: 40rpx 0;
+}
+
+.next-btn {
+  width: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 50rpx;
+  padding: 25rpx 0;
+  font-size: 32rpx;
+  font-weight: bold;
+  border: none;
+}
+
+.next-btn[disabled] {
+  background: #ccc;
+  color: #fff;
+}

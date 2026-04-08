@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="result-card">
+    <view class="result-title">基线评估结果</view>
+    <view class="result-badge {{groupClass}}">{{groupName}}</view>
+    <view class="result-description">{{groupDescription}}</view>
+  </view>
+
+  <view class="intervention-section" wx:if="{{showIntervention}}">
+    <view class="intervention-title">干预邀请</view>
+    <view class="intervention-text">{{interventionText}}</view>
+    
+    <view class="consent-checkbox" wx:if="{{showConsent}}">
+      <checkbox-group bindchange="onConsentChange">
+        <label>
+          <checkbox value="agreed" checked="{{hasConsent}}" color="#667eea"/>
+        </label>
+      </checkbox-group>
+      <text>我同意参加该项目第二阶段为期两周的干预活动</text>
+    </view>
+
+    <view class="btn-section">
+      <button class="accept-btn" bindtap="onAccept" disabled="{{!canProceed}}">接受邀请，参与干预</button>
+      <button class="decline-btn" bindtap="onDecline" wx:if="{{showDecline}}">暂不参与</button>
+    </view>
+  </view>
+
+  <view class="feedback-section" wx:if="{{showFeedback}}">
+    <view class="feedback-title">诚挚邀请您为本项目实施提出意见或建议</view>
+    <textarea class="feedback-textarea" placeholder="请输入您的建议..." value="{{feedback}}" bindinput="onFeedbackChange" auto-height/>
+    <button class="btn-primary" bindtap="onSubmitFeedback">提交反馈</button>
+  </view>
+
+  <view class="info-section" wx:if="{{showContinueOption}}">
+    <view class="info-title">温馨提示</view>
+    <view class="info-text">恭喜您！您的短视频依赖水平为低度。如果您还想继续参加本项目第二阶段的干预活动，我们将为您推送适当的干预方案。</view>
+    <view class="consent-checkbox">
+      <checkbox-group bindchange="onConsentChange">
+        <label>
+          <checkbox value="agreed" checked="{{hasConsent}}" color="#667eea"/>
+        </label>
+      </checkbox-group>
+      <text>我同意参加该项目第二阶段为期两周的干预活动</text>
+    </view>
+    <view class="btn-section">
+      <button class="accept-btn" bindtap="onAccept" disabled="{{!canProceed}}">愿意参与</button>
+      <button class="decline-btn" bindtap="onDecline">不愿意参与</button>
+    </view>
+  </view>
+</view>

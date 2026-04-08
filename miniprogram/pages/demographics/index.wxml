@@ -1,0 +1,99 @@
+<view class="container">
+  <view class="header">
+    <view class="project-title">国家级大创项目实验平台</view>
+    <view class="project-number">项目编号：202514390020</view>
+  </view>
+
+  <view class="consent-section">
+    <view class="consent-title">知情同意书</view>
+    <view class="consent-text">
+      您将参加为期三周（第1周为基线评估期，第2-3周为干预期）的大学生短视频依赖心理干预实验活动。我们将保护您的个人隐私，所有数据仅用于科研目的。
+    </view>
+    <view class="consent-checkbox">
+      <checkbox-group bindchange="onConsentChange">
+        <label>
+          <checkbox value="agreed" checked="{{hasConsent}}" color="#667eea"/>
+        </label>
+      </checkbox-group>
+      <text>我同意参加该项目，并承诺全程参与</text>
+    </view>
+  </view>
+
+  <view class="demographics-section">
+    <view class="section-title">基本信息</view>
+    
+    <view class="form-item">
+      <view class="item-label">1. 性别</view>
+      <view class="gender-options">
+        <label class="gender-option">
+          <radio value="男" checked="{{demographics.gender === '男'}}" color="#667eea" bindtap="onGenderSelect" data-value="男"/>
+          <text>男</text>
+        </label>
+        <label class="gender-option">
+          <radio value="女" checked="{{demographics.gender === '女'}}" color="#667eea" bindtap="onGenderSelect" data-value="女"/>
+          <text>女</text>
+        </label>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <view class="item-label">2. 年级</view>
+      <view class="grade-options">
+        <view class="grade-option {{demographics.grade === '大一' ? 'active' : ''}}" bindtap="onGradeSelect" data-value="大一">大一</view>
+        <view class="grade-option {{demographics.grade === '大二' ? 'active' : ''}}" bindtap="onGradeSelect" data-value="大二">大二</view>
+        <view class="grade-option {{demographics.grade === '大三' ? 'active' : ''}}" bindtap="onGradeSelect" data-value="大三">大三</view>
+        <view class="grade-option {{demographics.grade === '大四' ? 'active' : ''}}" bindtap="onGradeSelect" data-value="大四">大四</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="usage-section">
+    <view class="section-title">第1天 短视频使用情况</view>
+
+    <view class="usage-category">
+      <view class="category-title">休闲娱乐类</view>
+      <view class="category-row">
+        <text class="category-label">当日使用频次</text>
+        <input class="category-input" type="number" placeholder="请输入" value="{{usageData.entertainment.frequency}}" bindinput="onFreqChange" data-type="entertainment" data-field="frequency"/>
+        <text class="category-unit">次</text>
+      </view>
+      <view class="category-row">
+        <text class="category-label">当日使用时长</text>
+        <input class="category-input" type="digit" placeholder="请输入" value="{{usageData.entertainment.hours}}" bindinput="onHoursChange" data-type="entertainment" data-field="hours"/>
+        <text class="category-unit">小时</text>
+      </view>
+    </view>
+
+    <view class="usage-category">
+      <view class="category-title">学习工作类</view>
+      <view class="category-row">
+        <text class="category-label">当日使用频次</text>
+        <input class="category-input" type="number" placeholder="请输入" value="{{usageData.learning.frequency}}" bindinput="onFreqChange" data-type="learning" data-field="frequency"/>
+        <text class="category-unit">次</text>
+      </view>
+      <view class="category-row">
+        <text class="category-label">当日使用时长</text>
+        <input class="category-input" type="digit" placeholder="请输入" value="{{usageData.learning.hours}}" bindinput="onHoursChange" data-type="learning" data-field="hours"/>
+        <text class="category-unit">小时</text>
+      </view>
+    </view>
+
+    <view class="usage-category">
+      <view class="category-title">社交类</view>
+      <view class="category-row">
+        <text class="category-label">当日使用频次</text>
+        <input class="category-input" type="number" placeholder="请输入" value="{{usageData.social.frequency}}" bindinput="onFreqChange" data-type="social" data-field="frequency"/>
+        <text class="category-unit">次</text>
+      </view>
+      <view class="category-row">
+        <text class="category-label">当日使用时长</text>
+        <input class="category-input" type="digit" placeholder="请输入" value="{{usageData.social.hours}}" bindinput="onHoursChange" data-type="social" data-field="hours"/>
+        <text class="category-unit">小时</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="btn-section">
+    <button class="next-btn" bindtap="onNext" disabled="{{!canSubmit}}">下一步</button>
+  </view>
+</view>

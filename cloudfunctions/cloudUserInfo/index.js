@@ -4,9 +4,9 @@ cloud.init({
 });
 
 const db = cloud.database();
+
 // 获取openid
 const getOpenId = async () => {
-  // 获取基础信息
   const wxContext = cloud.getWXContext();
   return {
     openid: wxContext.OPENID,
@@ -15,116 +15,221 @@ const getOpenId = async () => {
   };
 };
 
-const getUserInfo = async () => {
-  return await db.collection('users').get()
-}
-
-// 创建集合
-const createCollection = async () => {
+// 保存每日短视频使用记录
+const saveDailyUsage = async (event) => {
+  const { day, phase, dayInPhase, data, openid } = event;
+  
   try {
-    // 创建集合
-    await db.createCollection("solutions");
-    await db.collection("solutions").add({
+    await db.collection('dailyUsage').add({
       data: {
-        openid: "1",
-        day: "上海",
-      },
+        openid: openid,
+        day: day,
+        phase: phase,
+        dayInPhase: dayInPhase,
+        usageData: data,
+        totalHours: (
+          (parseFloat(data.entertainment.hours) || 0) +
+          (parseFloat(data.learning.hours) || 0) +
+          (parseFloat(data.social.hours) || 0)
+        ).toFixed(2),
+        totalFrequency: (
+          (parseInt(data.entertainment.frequency) || 0) +
+          (parseInt(data.learning.frequency) || 0) +
+          (parseInt(data.social.frequency) || 0)
+        ),
+        createTime: db.serverDate()
+      }
     });
-    return {
-      success: true,
-    };
+    
+    return { success: true };
   } catch (e) {
-    // 这里catch到的是该collection已经存在，从业务逻辑上来说是运行成功的，所以catch返回success给前端，避免工具在前端抛出异常
-    return {
-      success: true,
-      data: "create collection success",
-    };
+    console.error('保存每日记录失败:', e);
+    return { success: false, errMsg: e.message };
   }
 };
 
-// 查询数据
-const selectRecord = async () => {
-  // 返回数据库查询结果
-  return await db.collection("solutions").get();
+// 提交问卷量表
+const submitQuestionnaire = async (event) => {
+  const { type, phase, answers, usageData, feedback, openid } = event;
+  
+  try {
+    await db.collection('questionnaires').add({
+      data: {
+        openid: openid,
+        type: type,
+        phase: phase,
+        answers: answers,
+        usageData: usageData,
+        feedback: feedback || '',
+        score: calculateScore(answers),
+        createTime: db.serverDate()
+      }
+    });
+    
+    return { success: true };
+  } catch (e) {
+    console.error('提交问卷失败:', e);
+    return { success: false, errMsg: e.message };
+  }
 };
 
-// 更新数据
-const updateRecord = async (event) => {
+// 计算问卷得分
+const calculateScore = (answers) => {
+  const sum = answers.reduce((total, val) => total + val, 0);
+  return sum;
+};
+
+// 根据基线期数据计算分组
+const calculateGroup = async (openid) => {
   try {
-    for (let i = 0; i < event.data.length; i++) {
-      await db
-        .collection("solutions")
-        .where({
-          _id: event.data[i]._id,
-        })
-        .update({
-          data: {
-            sales: event.data[i].sales,
-          },
-        });
+    // 获取基线期所有每日记录
+    const dailyRes = await db.collection('dailyUsage').where({
+      openid: openid,
+      phase: 1
+    }).orderBy('dayInPhase', 'asc').get();
+    
+    // 获取基线期问卷得分
+    const questionnaireRes = await db.collection('questionnaires').where({
+      openid: openid,
+      type: 'baseline'
+    }).get();
+    
+    const dailyData = dailyRes.data || [];
+    const questionnaireData = questionnaireRes.data || [];
+    
+    if (dailyData.length === 0 && questionnaireData.length === 0) {
+      return { group: 'low', score: 0 };
     }
-    return {
-      success: true,
-      data: event.data,
-    };
-  } catch (e) {
-    return {
-      success: false,
-      errMsg: e,
-    };
-  }
-};
-
-// 新增数据
-const insertRecord = async (event) => {
-  try {
-    const insertRecord = event.data;
-    await db.collection("solutions").add({
-      data: {
-        openid: insertRecord.openid,
-        day: insertRecord.city
-      },
+    
+    // 计算总使用时长
+    let totalHours = 0;
+    dailyData.forEach(record => {
+      totalHours += parseFloat(record.totalHours || 0);
     });
+    const avgDailyHours = dailyData.length > 0 ? totalHours / dailyData.length : 0;
+    
+    // 问卷得分
+    const questionnaireScore = questionnaireData.length > 0 ? questionnaireData[0].score : 0;
+    
+    // 综合评分算法：
+    // - 每日平均时长（权重40%）：超过6小时为高，3-6为中，低于3为低
+    // - 问卷得分（权重60%）：满分30分（6题*5分），18分以上为高依赖，12-18为中，低于12为低
+    
+    const hoursScore = avgDailyHours >= 6 ? 3 : (avgDailyHours >= 3 ? 2 : 1);
+    const questionScore = questionnaireScore >= 18 ? 3 : (questionnaireScore >= 12 ? 2 : 1);
+    
+    const totalScore = hoursScore * 0.4 + questionScore * 0.6 * (30 / 6);
+    
+    let group = 'low';
+    if (totalScore >= 2.5) {
+      group = 'high';
+    } else if (totalScore >= 1.8) {
+      group = 'medium';
+    } else {
+      group = 'low';
+    }
+    
     return {
-      success: true,
-      data: event.data,
+      group: group,
+      score: questionnaireScore,
+      avgDailyHours: avgDailyHours.toFixed(1),
+      questionnaireScore: questionnaireScore,
+      totalHours: totalHours.toFixed(1)
     };
   } catch (e) {
-    return {
-      success: false,
-      errMsg: e,
-    };
+    console.error('计算分组失败:', e);
+    return { group: 'low', score: 0 };
   }
 };
 
-// 删除数据
-const deleteRecord = async (event) => {
+// 获取分组结果
+const getGroupResult = async (event) => {
+  const openid = event.openid;
+  
   try {
-    await db
-      .collection("solutions")
-      .where({
-        _id: event.data._id,
-      })
-      .remove();
+    // 先检查是否已有分组结果
+    const userRes = await db.collection('users').where({
+      openid: openid
+    }).get();
+    
+    if (userRes.data && userRes.data.length > 0 && userRes.data[0].group) {
+      return {
+        success: true,
+        data: {
+          group: userRes.data[0].group,
+          questionnaireScore: userRes.data[0].questionnaireScore || 0,
+          avgDailyHours: userRes.data[0].avgDailyHours || '0'
+        }
+      };
+    }
+    
+    // 计算分组
+    const groupData = await calculateGroup(openid);
+    
+    // 保存分组结果到用户表
+    try {
+      await db.collection('users').where({
+        openid: openid
+      }).update({
+        data: {
+          group: groupData.group,
+          questionnaireScore: groupData.questionnaireScore,
+          avgDailyHours: groupData.avgDailyHours,
+          phase: 1,
+          updateTime: db.serverDate()
+        }
+      });
+    } catch (e) {
+      // 如果用户记录不存在，则创建
+      await db.collection('users').add({
+        data: {
+          openid: openid,
+          group: groupData.group,
+          questionnaireScore: groupData.questionnaireScore,
+          avgDailyHours: groupData.avgDailyHours,
+          phase: 1,
+          createTime: db.serverDate()
+        }
+      });
+    }
+    
     return {
       success: true,
+      data: groupData
     };
   } catch (e) {
-    return {
-      success: false,
-      errMsg: e,
-    };
+    console.error('获取分组结果失败:', e);
+    return { success: false, errMsg: e.message };
+  }
+};
+
+// 提交反馈
+const submitFeedback = async (event) => {
+  const { openid, feedback } = event;
+  
+  try {
+    await db.collection('feedback').add({
+      data: {
+        openid: openid,
+        feedback: feedback,
+        createTime: db.serverDate()
+      }
+    });
+    
+    return { success: true };
+  } catch (e) {
+    console.error('提交反馈失败:', e);
+    return { success: false, errMsg: e.message };
   }
 };
 
 // 获取打卡进度
 const getCheckinProgress = async (event) => {
   const openid = event.openid;
-  const period = event.period || 7;
+  const period = event.period || 21;
   
   try {
-    // 获取该用户的所有记录
-    const recordsRes = await db.collection('usageRecords').where({
+    const recordsRes = await db.collection('dailyUsage').where({
       openid: openid
     }).orderBy('createTime', 'asc').get();
     
@@ -132,7 +237,6 @@ const getCheckinProgress = async (event) => {
     const completedDays = records.length;
     let currentDay = completedDays + 1;
     
-    // 如果已经完成period天，则currentDay保持为period
     if (currentDay > period) {
       currentDay = period;
     }
@@ -160,326 +264,20 @@ const getCheckinProgress = async (event) => {
   }
 };
 
-// 分析使用时长并生成建议
-const analyzeUsage = async (event) => {
-  const data = event.data || {};
-  const day = event.day || 1;
-  const period = event.period || 7;
-  const openid = event.openid;
-  const userInfo = event.userInfo || {};
-  const weekdayHours = parseFloat(data.weekdayHours) || 0;
-  const weekendHours = parseFloat(data.weekendHours) || 0;
-  const socialHours = parseFloat(data.socialHours) || 0;
-  const workHours = parseFloat(data.workHours) || 0;
-  const gameHours = parseFloat(data.gameHours) || 0;
-  const videoHours = parseFloat(data.videoHours) || 0;
-  const shopHours = parseFloat(data.shopHours) || 0;
-
-  // 计算总使用时长
-  const avgDailyHours = (weekdayHours * 5 + weekendHours * 2) / 7;
-  const totalUsageHours = socialHours + workHours + gameHours + videoHours + shopHours;
-
-  // 保存用户使用记录到数据库
-  try {
-    await db.collection('usageRecords').add({
-      data: {
-        openid: openid,
-        day: day,
-        userInfo: userInfo,
-        usageData: data,
-        avgDailyHours: avgDailyHours,
-        totalUsageHours: totalUsageHours,
-        score: 0, // 先保存0，后面计算后再更新
-        createTime: db.serverDate(),
-        updateTime: db.serverDate()
-      }
-    });
-  } catch (e) {
-    console.error('保存使用记录失败:', e);
-    // 保存失败不影响后续分析流程
-  }
-
-  // 判断是否是最后一天，如果是最后一天，则汇总分析
-  let isFinalDay = day === period;
-  let allRecords = [];
-  
-  if (isFinalDay) {
-    try {
-      const recordsRes = await db.collection('usageRecords').where({
-        openid: openid
-      }).orderBy('createTime', 'asc').get();
-      allRecords = recordsRes.data || [];
-    } catch (e) {
-      console.error('获取历史记录失败:', e);
-    }
-  }
-
-  // 生成评估和建议
-  const adviceList = [];
-  let score = 100;
-
-  // 分析社交娱乐时间
-  if (socialHours > 4) {
-    adviceList.push({
-      icon: '💬',
-      type: '社交娱乐',
-      level: 'high',
-      levelText: '需要关注',
-      content: `您每天的社交娱乐时间长达 ${socialHours} 小时，建议适当减少`,
-      tips: '可以设置定时提醒，每使用30分钟休息5分钟'
-    });
-    score -= 15;
-  } else if (socialHours > 2) {
-    adviceList.push({
-      icon: '💬',
-      type: '社交娱乐',
-      level: 'medium',
-      levelText: '适度控制',
-      content: `您每天的社交娱乐时间为 ${socialHours} 小时，保持在合理范围`,
-      tips: '建议将部分时间用于阅读或学习新技能'
-    });
-    score -= 5;
-  } else {
-    adviceList.push({
-      icon: '💬',
-      type: '社交娱乐',
-      level: 'low',
-      levelText: '良好',
-      content: '您的社交娱乐时间控制得很好',
-      tips: '继续保持，可以适当增加户外活动时间'
-    });
-  }
-
-  // 分析工作学习时间
-  if (workHours < 1) {
-    adviceList.push({
-      icon: '💼',
-      type: '工作学习',
-      level: 'medium',
-      levelText: '建议增加',
-      content: '您在工作学习方面投入的时间较少',
-      tips: '建议每天至少安排1-2小时用于工作或学习'
-    });
-    score -= 10;
-  } else if (workHours > 6) {
-    adviceList.push({
-      icon: '💼',
-      type: '工作学习',
-      level: 'high',
-      levelText: '注意休息',
-      content: `您的工作学习时间长达 ${workHours} 小时，注意劳逸结合`,
-      tips: '每工作50分钟，建议休息10分钟'
-    });
-    score -= 8;
-  } else {
-    adviceList.push({
-      icon: '💼',
-      type: '工作学习',
-      level: 'low',
-      levelText: '优秀',
-      content: '您的工作学习时间安排合理',
-      tips: '保持良好的工作和学习习惯'
-    });
-  }
-
-  // 分析游戏时间
-  if (gameHours > 3) {
-    adviceList.push({
-      icon: '🎮',
-      type: '游戏娱乐',
-      level: 'high',
-      levelText: '需要控制',
-      content: `您的游戏时间达到 ${gameHours} 小时，建议适当减少`,
-      tips: '可以尝试制定游戏时间表，每天不超过1小时'
-    });
-    score -= 20;
-  } else if (gameHours > 1) {
-    adviceList.push({
-      icon: '🎮',
-      type: '游戏娱乐',
-      level: 'medium',
-      levelText: '适度',
-      content: '您的游戏时间在可控范围内',
-      tips: '可以尝试用运动或社交活动替代部分游戏时间'
-    });
-    score -= 5;
-  }
-
-  // 分析视频时间
-  if (videoHours > 3) {
-    adviceList.push({
-      icon: '📺',
-      type: '视频影音',
-      level: 'high',
-      levelText: '注意用眼',
-      content: `您观看视频的时间较长，达到 ${videoHours} 小时`,
-      tips: '建议每观看20分钟让眼睛休息，避免蓝光伤害'
-    });
-    score -= 15;
-  } else if (videoHours > 1) {
-    adviceList.push({
-      icon: '📺',
-      type: '视频影音',
-      level: 'medium',
-      levelText: '适度',
-      content: '您的视频观看时间适中',
-      tips: '可以选择高质量的内容观看，避免浪费时间'
-    });
-  }
-
-  // 分析购物时间
-  if (shopHours > 2) {
-    adviceList.push({
-      icon: '🛒',
-      type: '购物浏览',
-      level: 'medium',
-      levelText: '理性消费',
-      content: `您在购物应用上花费了 ${shopHours} 小时`,
-      tips: '建议制定购物清单，避免冲动消费'
-    });
-    score -= 8;
-  }
-
-  // 总体评估
-  let summary = {
-    rating: '',
-    emoji: '',
-    text: ''
-  };
-
-  if (score >= 85) {
-    summary = {
-      rating: '优秀',
-      emoji: '🌟',
-      text: '您的手机使用习惯非常好，继续保持！'
-    };
-  } else if (score >= 70) {
-    summary = {
-      rating: '良好',
-      emoji: '👍',
-      text: '您的手机使用习惯整体良好，还有优化空间。'
-    };
-  } else if (score >= 55) {
-    summary = {
-      rating: '一般',
-      emoji: '⚠️',
-      text: '您的手机使用习惯需要改善，建议参考以上建议进行调整。'
-    };
-  } else {
-    summary = {
-      rating: '需改进',
-      emoji: '🚨',
-      text: '您的手机使用时间过长，建议立即开始调整，关注身心健康。'
-    };
-  }
-
-  // 更新数据库中的评分
-  try {
-    const recordRes = await db.collection('usageRecords').where({
-      openid: openid,
-      day: day
-    }).orderBy('createTime', 'desc').limit(1).get();
-    
-    if (recordRes.data && recordRes.data.length > 0) {
-      const recordId = recordRes.data[0]._id;
-      await db.collection('usageRecords').doc(recordId).update({
-        data: {
-          score: score,
-          updateTime: db.serverDate()
-        }
-      });
-    }
-  } catch (e) {
-    console.error('更新评分失败:', e);
-    // 更新失败不影响返回结果
-  }
-
-  // 如果是最后一天，进行最终汇总分析
-  if (isFinalDay && allRecords.length > 0) {
-    const totalScore = allRecords.reduce((sum, record) => sum + (record.score || 0), 0);
-    const avgScore = Math.round(totalScore / allRecords.length);
-    const totalAvgHours = allRecords.reduce((sum, record) => sum + (record.avgDailyHours || 0), 0) / allRecords.length;
-    
-    // 根据平均分生成最终评估
-    let finalSummary = {
-      rating: '',
-      emoji: '',
-      text: ''
-    };
-    
-    if (avgScore >= 85) {
-      finalSummary = {
-        rating: '优秀',
-        emoji: '🏆',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用习惯非常好！${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时。`
-      };
-    } else if (avgScore >= 70) {
-      finalSummary = {
-        rating: '良好',
-        emoji: '🌟',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用习惯整体良好。${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时，继续努力！`
-      };
-    } else if (avgScore >= 55) {
-      finalSummary = {
-        rating: '一般',
-        emoji: '📈',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用习惯还有改善空间。${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时，建议参考建议持续优化。`
-      };
-    } else {
-      finalSummary = {
-        rating: '需改进',
-        emoji: '💪',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用时间较长。${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时，建议制定计划逐步减少使用时长。`
-      };
-    }
-    
-    return {
-      success: true,
-      data: {
-        isFinal: true,
-        summary: finalSummary,
-        adviceList: adviceList,
-        score: avgScore,
-        allRecords: allRecords,
-        avgDailyHours: totalAvgHours
-      }
-    };
-  }
-
-  return {
-    success: true,
-    data: {
-      isFinal: false,
-      day: day,
-      summary: summary,
-      adviceList: adviceList,
-      score: score
-    }
-  };
-};
-
 // 云函数入口函数
 exports.main = async (event, context) => {
   switch (event.type) {
     case "getOpenId":
       return await getOpenId();
-    case "userInfo":
-      return await getUserInfo();
-    case "getMiniProgramCode":
-      return await getMiniProgramCode();
-    case "createCollection":
-      return await createCollection();
-    case "selectRecord":
-      return await selectRecord();
-    case "updateRecord":
-      return await updateRecord(event);
-    case "insertRecord":
-      return await insertRecord(event);
-    case "deleteRecord":
-      return await deleteRecord(event);
+    case "saveDailyUsage":
+      return await saveDailyUsage(event);
+    case "submitQuestionnaire":
+      return await submitQuestionnaire(event);
+    case "getGroupResult":
+      return await getGroupResult(event);
+    case "submitFeedback":
+      return await submitFeedback(event);
     case "getCheckinProgress":
       return await getCheckinProgress(event);
-    case "analyzeUsage":
-      return await analyzeUsage(event);
   }
 };

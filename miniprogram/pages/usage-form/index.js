@@ -1,193 +1,125 @@
 Page({
   data: {
     currentDay: 1,
-    period: 7,
+    phase: 1,
+    phaseText: '基线评估期（第1周）',
     formData: {
-      weekdayHours: '',
-      weekendHours: '',
-      socialHours: '',
-      workHours: '',
-      gameHours: '',
-      videoHours: '',
-      shopHours: ''
+      entertainment: { frequency: '', hours: '' },
+      learning: { frequency: '', hours: '' },
+      social: { frequency: '', hours: '' }
     },
-    isSubmitting: false,
-    showModal: false,
-    adviceData: null
+    isSubmitting: false
   },
 
   onLoad: function(options) {
-    const period = getApp().globalData.period || 7;
-    const day = parseInt(options.day) || 1;
+    const app = getApp();
+    const day = parseInt(options.day) || 2;
+    const phase = app.globalData.phase || 1;
+    
+    let phaseText = '';
+    if (phase === 1) {
+      phaseText = '基线评估期（第1周）';
+    } else if (phase === 2) {
+      phaseText = '干预期（第2周）';
+    } else {
+      phaseText = '干预期（第3周）';
+    }
+
     this.setData({
       currentDay: day,
-      period: period
+      phase: phase,
+      phaseText: phaseText
     });
-    
-    // 更新导航栏标题
+
     wx.setNavigationBarTitle({
-      title: `第${day}天 - 填写使用情况`
+      title: `第${day}天 - 短视频使用记录`
     });
   },
 
-  onWeekdayHoursChange(e) {
-    this.setData({
-      'formData.weekdayHours': e.detail.value
-    });
+  onFreqChange(e) {
+    const type = e.currentTarget.dataset.type;
+    const field = e.currentTarget.dataset.field;
+    const formData = { ...this.data.formData };
+    formData[type][field] = e.detail.value;
+    this.setData({ formData });
   },
 
-  onWeekendHoursChange(e) {
-    this.setData({
-      'formData.weekendHours': e.detail.value
-    });
-  },
-
-  onSocialHoursChange(e) {
-    this.setData({
-      'formData.socialHours': e.detail.value
-    });
-  },
-
-  onWorkHoursChange(e) {
-    this.setData({
-      'formData.workHours': e.detail.value
-    });
-  },
-
-  onGameHoursChange(e) {
-    this.setData({
-      'formData.gameHours': e.detail.value
-    });
-  },
-
-  onVideoHoursChange(e) {
-    this.setData({
-      'formData.videoHours': e.detail.value
-    });
-  },
-
-  onShopHoursChange(e) {
-    this.setData({
-      'formData.shopHours': e.detail.value
-    });
-  },
-
-  validateForm() {
-    const { formData } = this.data;
-    
-    if (!formData.weekdayHours || parseFloat(formData.weekdayHours) < 0) {
-      wx.showToast({
-        title: '请输入有效的工作日使用时长',
-        icon: 'none'
-      });
-      return false;
-    }
-
-    if (!formData.weekendHours || parseFloat(formData.weekendHours) < 0) {
-      wx.showToast({
-        title: '请输入有效的周末使用时长',
-        icon: 'none'
-      });
-      return false;
-    }
-
-    if (!formData.socialHours || parseFloat(formData.socialHours) < 0) {
-      wx.showToast({
-        title: '请输入有效的社交娱乐时长',
-        icon: 'none'
-      });
-      return false;
-    }
-
-    if (!formData.workHours || parseFloat(formData.workHours) < 0) {
-      wx.showToast({
-        title: '请输入有效的工作学习时长',
-        icon: 'none'
-      });
-      return false;
-    }
-
-    return true;
+  onHoursChange(e) {
+    const type = e.currentTarget.dataset.type;
+    const field = e.currentTarget.dataset.field;
+    const formData = { ...this.data.formData };
+    formData[type][field] = e.detail.value;
+    this.setData({ formData });
   },
 
   onSubmit() {
-    if (!this.validateForm()) {
-      return;
-    }
-
-    if (this.data.isSubmitting) {
-      return;
-    }
+    if (this.data.isSubmitting) return;
 
     this.setData({ isSubmitting: true });
 
-    wx.showLoading({
-      title: '分析中...'
-    });
-
-    const { formData, currentDay, period } = this.data;
     const app = getApp();
+    const { currentDay, phase, formData } = this.data;
 
-    wx.cloud.callFunction({
-      name: 'cloudUserInfo',
-      data: {
-        type: 'analyzeUsage',
-        day: currentDay,
-        period: period,
-        data: formData,
-        openid: app.globalData.openid,
-        userInfo: app.globalData.userInfo
-      }
-    }).then(res => {
-      wx.hideLoading();
-      
-      if (res.result && res.result.success) {
-        this.setData({
-          adviceData: res.result.data,
-          showModal: true,
-          isSubmitting: false
-        });
-      } else {
-        wx.showToast({
-          title: '分析失败，请重试',
-          icon: 'none'
-        });
-        this.setData({ isSubmitting: false });
-      }
-    }).catch(err => {
-      wx.hideLoading();
-      console.error('云函数调用失败:', err);
-      
-      wx.showToast({
-        title: '网络错误，请重试',
-        icon: 'none'
-      });
+    const dayInPhase = phase === 1 ? currentDay : (phase === 2 ? currentDay - 7 : currentDay - 14);
+    const totalDay = (phase - 1) * 7 + currentDay;
+
+    const dailyRecords = wx.getStorageSync('dailyRecords') || [];
+    dailyRecords.push({
+      day: totalDay,
+      phase: phase,
+      dayInPhase: dayInPhase,
+      usageData: formData,
+      createTime: new Date().toISOString()
+    });
+    wx.setStorageSync('dailyRecords', dailyRecords);
+
+    setTimeout(() => {
       this.setData({ isSubmitting: false });
-    });
-  },
+      wx.showToast({
+        title: '保存成功',
+        icon: 'success'
+      });
 
-  onCloseModal() {
-    this.setData({
-      showModal: false,
-      adviceData: null
-    });
-  },
+      app.globalData.currentDay = currentDay;
+      app.globalData.phase = phase;
 
-  onRetry() {
-    this.setData({
-      showModal: false,
-      adviceData: null
-    });
-    wx.navigateBack();
-  },
-
-  onFinish() {
-    this.setData({
-      showModal: false,
-      adviceData: null
-    });
-    wx.reLaunch({
-      url: '/pages/welcome/index'
-    });
+      if (phase === 1 && currentDay < 7) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/usage-form/index?day=${currentDay + 1}`
+          });
+        }, 1500);
+      } else if (phase === 1 && currentDay === 7) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: '/pages/questionnaire/index?type=baseline'
+          });
+        }, 1500);
+      } else if (phase === 2 && currentDay < 7) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/usage-form/index?day=${currentDay + 1}`
+          });
+        }, 1500);
+      } else if (phase === 2 && currentDay === 7) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: '/pages/questionnaire/index?type=intervention1'
+          });
+        }, 1500);
+      } else if (phase === 3 && currentDay < 7) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/usage-form/index?day=${currentDay + 1}`
+          });
+        }, 1500);
+      } else if (phase === 3 && currentDay === 7) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: '/pages/questionnaire/index?type=intervention2'
+          });
+        }, 1500);
+      }
+    }, 500);
   }
 });

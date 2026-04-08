@@ -1,0 +1,166 @@
+.container {
+  padding: 30rpx;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.result-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  text-align: center;
+}
+
+.result-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.result-badge {
+  display: inline-block;
+  padding: 15rpx 40rpx;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin: 20rpx 0;
+}
+
+.result-badge.low {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+.result-badge.medium {
+  background: #fff3e0;
+  color: #ff9800;
+}
+
+.result-badge.high {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.result-description {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-top: 20rpx;
+}
+
+.intervention-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+}
+
+.intervention-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.intervention-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 30rpx;
+}
+
+.consent-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30rpx 0;
+}
+
+.consent-checkbox text {
+  margin-left: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.btn-section {
+  padding: 40rpx 0;
+}
+
+.accept-btn, .decline-btn {
+  width: 100%;
+  padding: 25rpx 0;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  border: none;
+  margin-bottom: 20rpx;
+}
+
+.accept-btn {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.decline-btn {
+  background: #fff;
+  color: #999;
+  border: 2rpx solid #ddd;
+}
+
+.feedback-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+}
+
+.feedback-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.feedback-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.info-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.info-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+
+.info-text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 50rpx;
+  padding: 25rpx 0;
+  font-size: 32rpx;
+  font-weight: bold;
+  border: none;
+}
