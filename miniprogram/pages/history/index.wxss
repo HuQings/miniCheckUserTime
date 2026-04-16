@@ -8,7 +8,7 @@ page {
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #5067ca 100%);
   padding: 60rpx 40rpx 80rpx;
   display: flex;
   flex-direction: column;
@@ -250,7 +250,7 @@ page {
 .start-btn {
   width: 300rpx;
   height: 88rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #5067ca 100%);
   border-radius: 44rpx;
   display: flex;
   align-items: center;

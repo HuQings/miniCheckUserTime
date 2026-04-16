@@ -1,7 +1,7 @@
 .container {
   padding: 30rpx;
   min-height: 100vh;
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #667eea 0%, #5067ca 100%);
 }
 
 .result-card {
@@ -100,7 +100,7 @@
 }
 
 .accept-btn {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #667eea 0%, #5067ca 100%);
   color: #fff;
 }
 
@@ -156,7 +156,7 @@
 
 .btn-primary {
   width: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #667eea 0%, #5067ca 100%);
   color: #fff;
   border-radius: 50rpx;
   padding: 25rpx 0;
