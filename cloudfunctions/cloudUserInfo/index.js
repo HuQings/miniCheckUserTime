@@ -4,6 +4,106 @@ cloud.init({
 });
 
 const db = cloud.database();
+const SURVEY_VERSION = 'short-video-v1';
+const DEFAULT_SURVEY_CONFIG = {
+  surveyVersion: SURVEY_VERSION,
+  name: '大学生短视频依赖评估与干预方案',
+  period: 21,
+  usageFields: [
+    { title: '短视频使用_休闲娱乐类', countField: 'leisureCount', hoursField: 'leisureHours' },
+    { title: '短视频使用_学习工作类', countField: 'studyCount', hoursField: 'studyHours' },
+    { title: '短视频使用_社交类', countField: 'socialCount', hoursField: 'socialHours' }
+  ],
+  likertOptions: [
+    { value: '1', label: 'A.完全不符合' },
+    { value: '2', label: 'B.不太符合' },
+    { value: '3', label: 'C.不置可否' },
+    { value: '4', label: 'D.比较符合' },
+    { value: '5', label: 'E.完全符合' }
+  ],
+  genderOptions: ['男', '女'],
+  gradeOptions: ['大一', '大二', '大三', '大四'],
+  dependencyQuestions: [
+    { field: 'fatigue', text: '长时间刷短视频后，我会觉得空虚疲累。' },
+    { field: 'guilt', text: '长时间刷短视频后，我会因逝去的时光而自责自疚。' },
+    { field: 'interference', text: '长时间刷短视频，明显地干扰了我的学习和生活。' },
+    { field: 'withdrawal', text: '倘若不能碰手机（比如手机没电、被老师统一管理时），我会觉得心里发慌、难受或想发脾气。' },
+    { field: 'annoyance', text: '明知长时间刷短视频不好但又放不下，这令我很烦躁。' },
+    { field: 'control', text: '我很难控制刷短视频的时长，有种“越刷越不够”的感觉。' }
+  ],
+  interventionQuestion: {
+    field: 'interventionEffective',
+    text: '我认为本周实施的短视频使用干预方案对我是有效的。'
+  },
+  feedbackQuestion: '请为本项目实施提出意见或建议'
+};
+
+const ensureSurveyConfig = async () => {
+  try {
+    const res = await db.collection('surveyConfigs').doc(SURVEY_VERSION).get();
+    if (res.data) {
+      return res.data;
+    }
+  } catch (e) {
+    try {
+      await db.createCollection('surveyConfigs');
+    } catch (createError) {}
+  }
+
+  const config = {
+    ...DEFAULT_SURVEY_CONFIG,
+    createTime: db.serverDate(),
+    updateTime: db.serverDate()
+  };
+  await db.collection('surveyConfigs').doc(SURVEY_VERSION).set({
+    data: config
+  });
+  return DEFAULT_SURVEY_CONFIG;
+};
+
+const getSurveyConfig = async () => {
+  try {
+    const config = await ensureSurveyConfig();
+    return {
+      success: true,
+      data: config
+    };
+  } catch (e) {
+    console.error('获取问卷配置失败:', e);
+    return {
+      success: false,
+      errMsg: e,
+      data: DEFAULT_SURVEY_CONFIG
+    };
+  }
+};
+
+const updateSurveyConfig = async (event) => {
+  try {
+    try {
+      await db.createCollection('surveyConfigs');
+    } catch (createError) {}
+    const config = {
+      ...DEFAULT_SURVEY_CONFIG,
+      ...(event.data || {}),
+      surveyVersion: SURVEY_VERSION,
+      updateTime: db.serverDate()
+    };
+    await db.collection('surveyConfigs').doc(SURVEY_VERSION).set({
+      data: config
+    });
+    return {
+      success: true,
+      data: config
+    };
+  } catch (e) {
+    console.error('更新问卷配置失败:', e);
+    return {
+      success: false,
+      errMsg: e
+    };
+  }
+};
 // 获取openid
 const getOpenId = async () => {
   // 获取基础信息
@@ -120,21 +220,27 @@ const deleteRecord = async (event) => {
 // 获取打卡进度
 const getCheckinProgress = async (event) => {
   const openid = event.openid;
-  const period = event.period || 7;
+  const period = event.period || 21;
   
   try {
     // 获取该用户的所有记录
     const recordsRes = await db.collection('usageRecords').where({
-      openid: openid
+      openid: openid,
+      surveyVersion: SURVEY_VERSION
     }).orderBy('createTime', 'asc').get();
     
     const records = recordsRes.data || [];
-    const completedDays = records.length;
-    let currentDay = completedDays + 1;
-    
-    // 如果已经完成period天，则currentDay保持为period
-    if (currentDay > period) {
-      currentDay = period;
+    const completedDaySet = records.reduce((set, record) => {
+      if (record.day) set[record.day] = true;
+      return set;
+    }, {});
+    const completedDays = Object.keys(completedDaySet).length;
+    let currentDay = period;
+    for (let day = 1; day <= period; day++) {
+      if (!completedDaySet[day]) {
+        currentDay = day;
+        break;
+      }
     }
     
     return {
@@ -160,286 +266,194 @@ const getCheckinProgress = async (event) => {
   }
 };
 
-// 分析使用时长并生成建议
+const dependencyFields = ['fatigue', 'guilt', 'interference', 'withdrawal', 'annoyance', 'control'];
+
+const toNumber = (value) => {
+  const numberValue = parseFloat(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+};
+
+const getDependencyLevel = (score) => {
+  if (score <= 10) return '低依赖组';
+  if (score <= 18) return '中度依赖组';
+  return '高依赖组';
+};
+
+const getDayMeta = (day) => {
+  const week = Math.ceil(day / 7);
+  const weekDay = ((day - 1) % 7) + 1;
+  return {
+    week,
+    weekDay,
+    phase: week === 1 ? '基线期' : '干预期'
+  };
+};
+
+// 分析短视频调查数据并生成反馈
 const analyzeUsage = async (event) => {
   const data = event.data || {};
   const day = event.day || 1;
-  const period = event.period || 7;
+  const period = event.period || 21;
   const openid = event.openid;
   const userInfo = event.userInfo || {};
-  const weekdayHours = parseFloat(data.weekdayHours) || 0;
-  const weekendHours = parseFloat(data.weekendHours) || 0;
-  const socialHours = parseFloat(data.socialHours) || 0;
-  const workHours = parseFloat(data.workHours) || 0;
-  const gameHours = parseFloat(data.gameHours) || 0;
-  const videoHours = parseFloat(data.videoHours) || 0;
-  const shopHours = parseFloat(data.shopHours) || 0;
+  const dayMeta = getDayMeta(day);
+  const usageData = {
+    leisureCount: toNumber(data.leisureCount),
+    leisureHours: toNumber(data.leisureHours),
+    studyCount: toNumber(data.studyCount),
+    studyHours: toNumber(data.studyHours),
+    socialCount: toNumber(data.socialCount),
+    socialHours: toNumber(data.socialHours)
+  };
+  const totalShortVideoCount = usageData.leisureCount + usageData.studyCount + usageData.socialCount;
+  const totalShortVideoHours = usageData.leisureHours + usageData.studyHours + usageData.socialHours;
+  const scaleData = data.scale || {};
+  const dependencyScore = dependencyFields.reduce((sum, field) => sum + toNumber(scaleData[field]), 0);
+  const hasScale = dependencyFields.some(field => scaleData[field]);
+  const dependencyLevel = hasScale ? getDependencyLevel(dependencyScore) : '';
+  const interventionEffective = scaleData.interventionEffective ? toNumber(scaleData.interventionEffective) : 0;
+  const timePenalty = Math.max(0, totalShortVideoHours - 3) * (hasScale ? 5 : 8);
+  const score = Math.round(Math.max(0, 100 - (hasScale ? dependencyScore * 3 : 0) - timePenalty));
+  const adviceList = [];
 
-  // 计算总使用时长
-  const avgDailyHours = (weekdayHours * 5 + weekendHours * 2) / 7;
-  const totalUsageHours = socialHours + workHours + gameHours + videoHours + shopHours;
+  if (totalShortVideoHours > 5) {
+    adviceList.push({
+      icon: '▶',
+      type: '短视频总时长',
+      level: 'high',
+      levelText: '需要关注',
+      content: `您今日短视频总使用时长约 ${totalShortVideoHours.toFixed(1)} 小时，已经偏高。`,
+      tips: '建议设置单次使用上限，把休闲短视频集中到固定时间段。'
+    });
+  } else if (totalShortVideoHours > 3) {
+    adviceList.push({
+      icon: '▶',
+      type: '短视频总时长',
+      level: 'medium',
+      levelText: '适度控制',
+      content: `您今日短视频总使用时长约 ${totalShortVideoHours.toFixed(1)} 小时。`,
+      tips: '可以尝试先减少休闲娱乐类短视频的打开次数。'
+    });
+  } else {
+    adviceList.push({
+      icon: '▶',
+      type: '短视频总时长',
+      level: 'low',
+      levelText: '良好',
+      content: `您今日短视频总使用时长约 ${totalShortVideoHours.toFixed(1)} 小时，整体可控。`,
+      tips: '继续保持记录，有助于观察三周内的变化。'
+    });
+  }
 
-  // 保存用户使用记录到数据库
+  if (usageData.leisureHours > usageData.studyHours + usageData.socialHours) {
+    adviceList.push({
+      icon: '🎯',
+      type: '用途结构',
+      level: 'medium',
+      levelText: '结构偏休闲',
+      content: '今日休闲娱乐类短视频占比最高。',
+      tips: '可以把休闲短视频前置为明确奖励，而不是无意识打开。'
+    });
+  }
+
+  if (hasScale) {
+    const levelMap = {
+      '低依赖组': { level: 'low', text: '低依赖' },
+      '中度依赖组': { level: 'medium', text: '中度依赖' },
+      '高依赖组': { level: 'high', text: '高依赖' }
+    };
+    const levelInfo = levelMap[dependencyLevel];
+    adviceList.push({
+      icon: '📋',
+      type: '依赖评估',
+      level: levelInfo.level,
+      levelText: levelInfo.text,
+      content: `本次量表得分为 ${dependencyScore} 分，评估为${dependencyLevel}。`,
+      tips: dependencyLevel === '低依赖组' ? '请继续保持稳定使用习惯。' : '建议继续参与后续两周干预活动，并关注难以停止、烦躁和自责等体验。'
+    });
+  }
+
+  if (interventionEffective) {
+    adviceList.push({
+      icon: '💡',
+      type: '干预反馈',
+      level: interventionEffective >= 4 ? 'low' : interventionEffective === 3 ? 'medium' : 'high',
+      levelText: interventionEffective >= 4 ? '有效' : interventionEffective === 3 ? '待观察' : '需调整',
+      content: `您对本周干预方案有效性的评分为 ${interventionEffective} 分。`,
+      tips: interventionEffective >= 4 ? '当前方案可以继续执行。' : '建议记录具体困难，便于后续优化干预方案。'
+    });
+  }
+
+  const summary = {
+    rating: hasScale ? dependencyLevel : '已记录',
+    emoji: hasScale ? '📋' : '✅',
+    text: hasScale
+      ? `第${dayMeta.week}周第${dayMeta.weekDay}天记录完成。短视频总时长 ${totalShortVideoHours.toFixed(1)} 小时，量表得分 ${dependencyScore} 分。`
+      : `第${dayMeta.week}周第${dayMeta.weekDay}天记录完成。短视频总时长 ${totalShortVideoHours.toFixed(1)} 小时，使用频次 ${totalShortVideoCount} 次。`
+  };
+
   try {
     await db.collection('usageRecords').add({
       data: {
         openid: openid,
+        surveyVersion: SURVEY_VERSION,
         day: day,
+        week: dayMeta.week,
+        weekDay: dayMeta.weekDay,
+        phase: dayMeta.phase,
         userInfo: userInfo,
         usageData: data,
-        avgDailyHours: avgDailyHours,
-        totalUsageHours: totalUsageHours,
-        score: 0, // 先保存0，后面计算后再更新
+        shortVideoUsage: usageData,
+        totalShortVideoCount: totalShortVideoCount,
+        totalShortVideoHours: totalShortVideoHours,
+        avgDailyHours: totalShortVideoHours,
+        totalUsageHours: totalShortVideoHours,
+        scaleData: scaleData,
+        dependencyScore: dependencyScore,
+        dependencyLevel: dependencyLevel,
+        interventionEffective: interventionEffective,
+        feedback: data.feedback || '',
+        score: score,
         createTime: db.serverDate(),
         updateTime: db.serverDate()
       }
     });
   } catch (e) {
     console.error('保存使用记录失败:', e);
-    // 保存失败不影响后续分析流程
   }
 
-  // 判断是否是最后一天，如果是最后一天，则汇总分析
-  let isFinalDay = day === period;
-  let allRecords = [];
-  
-  if (isFinalDay) {
+  if (day === period) {
+    let allRecords = [];
     try {
       const recordsRes = await db.collection('usageRecords').where({
-        openid: openid
+        openid: openid,
+        surveyVersion: SURVEY_VERSION
       }).orderBy('createTime', 'asc').get();
       allRecords = recordsRes.data || [];
     } catch (e) {
       console.error('获取历史记录失败:', e);
     }
-  }
 
-  // 生成评估和建议
-  const adviceList = [];
-  let score = 100;
-
-  // 分析社交娱乐时间
-  if (socialHours > 4) {
-    adviceList.push({
-      icon: '💬',
-      type: '社交娱乐',
-      level: 'high',
-      levelText: '需要关注',
-      content: `您每天的社交娱乐时间长达 ${socialHours} 小时，建议适当减少`,
-      tips: '可以设置定时提醒，每使用30分钟休息5分钟'
-    });
-    score -= 15;
-  } else if (socialHours > 2) {
-    adviceList.push({
-      icon: '💬',
-      type: '社交娱乐',
-      level: 'medium',
-      levelText: '适度控制',
-      content: `您每天的社交娱乐时间为 ${socialHours} 小时，保持在合理范围`,
-      tips: '建议将部分时间用于阅读或学习新技能'
-    });
-    score -= 5;
-  } else {
-    adviceList.push({
-      icon: '💬',
-      type: '社交娱乐',
-      level: 'low',
-      levelText: '良好',
-      content: '您的社交娱乐时间控制得很好',
-      tips: '继续保持，可以适当增加户外活动时间'
-    });
-  }
-
-  // 分析工作学习时间
-  if (workHours < 1) {
-    adviceList.push({
-      icon: '💼',
-      type: '工作学习',
-      level: 'medium',
-      levelText: '建议增加',
-      content: '您在工作学习方面投入的时间较少',
-      tips: '建议每天至少安排1-2小时用于工作或学习'
-    });
-    score -= 10;
-  } else if (workHours > 6) {
-    adviceList.push({
-      icon: '💼',
-      type: '工作学习',
-      level: 'high',
-      levelText: '注意休息',
-      content: `您的工作学习时间长达 ${workHours} 小时，注意劳逸结合`,
-      tips: '每工作50分钟，建议休息10分钟'
-    });
-    score -= 8;
-  } else {
-    adviceList.push({
-      icon: '💼',
-      type: '工作学习',
-      level: 'low',
-      levelText: '优秀',
-      content: '您的工作学习时间安排合理',
-      tips: '保持良好的工作和学习习惯'
-    });
-  }
-
-  // 分析游戏时间
-  if (gameHours > 3) {
-    adviceList.push({
-      icon: '🎮',
-      type: '游戏娱乐',
-      level: 'high',
-      levelText: '需要控制',
-      content: `您的游戏时间达到 ${gameHours} 小时，建议适当减少`,
-      tips: '可以尝试制定游戏时间表，每天不超过1小时'
-    });
-    score -= 20;
-  } else if (gameHours > 1) {
-    adviceList.push({
-      icon: '🎮',
-      type: '游戏娱乐',
-      level: 'medium',
-      levelText: '适度',
-      content: '您的游戏时间在可控范围内',
-      tips: '可以尝试用运动或社交活动替代部分游戏时间'
-    });
-    score -= 5;
-  }
-
-  // 分析视频时间
-  if (videoHours > 3) {
-    adviceList.push({
-      icon: '📺',
-      type: '视频影音',
-      level: 'high',
-      levelText: '注意用眼',
-      content: `您观看视频的时间较长，达到 ${videoHours} 小时`,
-      tips: '建议每观看20分钟让眼睛休息，避免蓝光伤害'
-    });
-    score -= 15;
-  } else if (videoHours > 1) {
-    adviceList.push({
-      icon: '📺',
-      type: '视频影音',
-      level: 'medium',
-      levelText: '适度',
-      content: '您的视频观看时间适中',
-      tips: '可以选择高质量的内容观看，避免浪费时间'
-    });
-  }
-
-  // 分析购物时间
-  if (shopHours > 2) {
-    adviceList.push({
-      icon: '🛒',
-      type: '购物浏览',
-      level: 'medium',
-      levelText: '理性消费',
-      content: `您在购物应用上花费了 ${shopHours} 小时`,
-      tips: '建议制定购物清单，避免冲动消费'
-    });
-    score -= 8;
-  }
-
-  // 总体评估
-  let summary = {
-    rating: '',
-    emoji: '',
-    text: ''
-  };
-
-  if (score >= 85) {
-    summary = {
-      rating: '优秀',
-      emoji: '🌟',
-      text: '您的手机使用习惯非常好，继续保持！'
+    const recordsForSummary = allRecords.length > 0 ? allRecords : [{ score, dependencyScore, totalShortVideoHours }];
+    const totalAvgHours = recordsForSummary.reduce((sum, record) => sum + (record.totalShortVideoHours || record.avgDailyHours || 0), 0) / recordsForSummary.length;
+    const scaleRecords = recordsForSummary.filter(record => record.dependencyScore);
+    const avgDependencyScore = scaleRecords.length > 0
+      ? Math.round(scaleRecords.reduce((sum, record) => sum + (record.dependencyScore || 0), 0) / scaleRecords.length)
+      : dependencyScore;
+    const finalLevel = getDependencyLevel(avgDependencyScore);
+    const finalSummary = {
+      rating: finalLevel,
+      emoji: '🏆',
+      text: `恭喜完成为期三周的短视频依赖评估与干预任务！三周平均每日短视频使用 ${totalAvgHours.toFixed(1)} 小时，阶段量表平均 ${avgDependencyScore} 分，综合评估为${finalLevel}。`
     };
-  } else if (score >= 70) {
-    summary = {
-      rating: '良好',
-      emoji: '👍',
-      text: '您的手机使用习惯整体良好，还有优化空间。'
-    };
-  } else if (score >= 55) {
-    summary = {
-      rating: '一般',
-      emoji: '⚠️',
-      text: '您的手机使用习惯需要改善，建议参考以上建议进行调整。'
-    };
-  } else {
-    summary = {
-      rating: '需改进',
-      emoji: '🚨',
-      text: '您的手机使用时间过长，建议立即开始调整，关注身心健康。'
-    };
-  }
 
-  // 更新数据库中的评分
-  try {
-    const recordRes = await db.collection('usageRecords').where({
-      openid: openid,
-      day: day
-    }).orderBy('createTime', 'desc').limit(1).get();
-    
-    if (recordRes.data && recordRes.data.length > 0) {
-      const recordId = recordRes.data[0]._id;
-      await db.collection('usageRecords').doc(recordId).update({
-        data: {
-          score: score,
-          updateTime: db.serverDate()
-        }
-      });
-    }
-  } catch (e) {
-    console.error('更新评分失败:', e);
-    // 更新失败不影响返回结果
-  }
-
-  // 如果是最后一天，进行最终汇总分析
-  if (isFinalDay && allRecords.length > 0) {
-    const totalScore = allRecords.reduce((sum, record) => sum + (record.score || 0), 0);
-    const avgScore = Math.round(totalScore / allRecords.length);
-    const totalAvgHours = allRecords.reduce((sum, record) => sum + (record.avgDailyHours || 0), 0) / allRecords.length;
-    
-    // 根据平均分生成最终评估
-    let finalSummary = {
-      rating: '',
-      emoji: '',
-      text: ''
-    };
-    
-    if (avgScore >= 85) {
-      finalSummary = {
-        rating: '优秀',
-        emoji: '🏆',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用习惯非常好！${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时。`
-      };
-    } else if (avgScore >= 70) {
-      finalSummary = {
-        rating: '良好',
-        emoji: '🌟',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用习惯整体良好。${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时，继续努力！`
-      };
-    } else if (avgScore >= 55) {
-      finalSummary = {
-        rating: '一般',
-        emoji: '📈',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用习惯还有改善空间。${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时，建议参考建议持续优化。`
-      };
-    } else {
-      finalSummary = {
-        rating: '需改进',
-        emoji: '💪',
-        text: `恭喜完成${period}天打卡！您的平均得分是 ${avgScore} 分，手机使用时间较长。${period}天平均每天使用 ${totalAvgHours.toFixed(1)} 小时，建议制定计划逐步减少使用时长。`
-      };
-    }
-    
     return {
       success: true,
       data: {
         isFinal: true,
         summary: finalSummary,
         adviceList: adviceList,
-        score: avgScore,
+        score: Math.round(recordsForSummary.reduce((sum, record) => sum + (record.score || 0), 0) / recordsForSummary.length),
         allRecords: allRecords,
         avgDailyHours: totalAvgHours
       }
@@ -479,6 +493,10 @@ exports.main = async (event, context) => {
       return await deleteRecord(event);
     case "getCheckinProgress":
       return await getCheckinProgress(event);
+    case "getSurveyConfig":
+      return await getSurveyConfig();
+    case "updateSurveyConfig":
+      return await updateSurveyConfig(event);
     case "analyzeUsage":
       return await analyzeUsage(event);
   }

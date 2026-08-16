@@ -153,6 +153,67 @@ page {
   margin-left: 12rpx;
 }
 
+.second-input {
+  margin-top: 16rpx;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.choice-pill,
+.option-item {
+  min-height: 72rpx;
+  padding: 0 24rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid #e8ecf1;
+  background: #f8f9fc;
+  color: #555;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+}
+
+.choice-pill.selected,
+.option-item.selected {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.12);
+  color: #667eea;
+  font-weight: 600;
+}
+
+.scale-label {
+  align-items: flex-start;
+}
+
+.question-no {
+  flex-shrink: 0;
+  color: #667eea;
+  font-size: 28rpx;
+  font-weight: 700;
+  margin-right: 10rpx;
+}
+
+.option-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12rpx;
+}
+
+.feedback-input {
+  width: 100%;
+  min-height: 180rpx;
+  box-sizing: border-box;
+  background: #f8f9fc;
+  border: 2rpx solid #e8ecf1;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
 .footer {
   position: fixed;
   bottom: 0;

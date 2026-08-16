@@ -4,13 +4,32 @@ Page({
     completedDays: 0,
     avgScore: 0,
     avgHours: 0,
-    period: 7
+    period: 21
   },
 
   onLoad: function (options) {
-    const period = getApp().globalData.period || 7;
+    const period = getApp().globalData.period || 21;
     this.setData({ period });
-    this.loadRecords();
+    this.loadSurveyConfig();
+  },
+
+  loadSurveyConfig: function() {
+    wx.cloud.callFunction({
+      name: 'cloudUserInfo',
+      data: {
+        type: 'getSurveyConfig'
+      }
+    }).then(res => {
+      if (res.result && res.result.data && res.result.data.period) {
+        const period = res.result.data.period;
+        getApp().globalData.period = period;
+        this.setData({ period });
+      }
+    }).catch(err => {
+      console.error('获取问卷配置失败:', err);
+    }).finally(() => {
+      this.loadRecords();
+    });
   },
 
   loadRecords: function() {
@@ -23,7 +42,7 @@ Page({
       data: {
         type: 'getCheckinProgress',
         openid: getApp().globalData.openid,
-        period: getApp().globalData.period || 7
+        period: getApp().globalData.period || 21
       }
     }).then(res => {
       wx.hideLoading();

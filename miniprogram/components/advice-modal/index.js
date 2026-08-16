@@ -10,7 +10,7 @@ Component({
     },
     period: {
       type: Number,
-      value: 7
+      value: 21
     }
   },
 

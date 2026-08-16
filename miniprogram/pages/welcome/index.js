@@ -4,15 +4,39 @@ Page({
     hasLogin: false,
     isLoading: false,
     checkinDays: [],
+    checkinWeeks: [],
     completedDays: 0,
     currentDay: 1,
-    period: 7
+    period: 21
   },
 
   onLoad: function (options) {
-    const period = getApp().globalData.period || 7;
+    const period = getApp().globalData.period || 21;
     this.setData({ period });
     this.initCheckinDays();
+    this.loadSurveyConfig();
+  },
+
+  loadSurveyConfig: function() {
+    wx.cloud.callFunction({
+      name: 'cloudUserInfo',
+      data: {
+        type: 'getSurveyConfig'
+      }
+    }).then(res => {
+      if (res.result && res.result.data && res.result.data.period) {
+        const period = res.result.data.period;
+        getApp().globalData.period = period;
+        this.setData({ period }, () => {
+          this.initCheckinDays();
+          if (getApp().globalData.openid) {
+            this.loadCheckinProgress();
+          }
+        });
+      }
+    }).catch(err => {
+      console.error('获取问卷配置失败:', err);
+    });
   },
 
   onShow: function() {
@@ -31,16 +55,30 @@ Page({
         current: i === 1
       });
     }
-    this.setData({ checkinDays });
+    this.setData({
+      checkinDays,
+      checkinWeeks: this.groupCheckinWeeks(checkinDays)
+    });
+  },
+
+  groupCheckinWeeks: function(checkinDays) {
+    const weeks = [];
+    for (let i = 0; i < checkinDays.length; i += 7) {
+      weeks.push({
+        week: Math.floor(i / 7) + 1,
+        days: checkinDays.slice(i, i + 7)
+      });
+    }
+    return weeks;
   },
 
   loadCheckinProgress: function() {
-    wx.cloud.callFunction({
+    return wx.cloud.callFunction({
       name: 'cloudUserInfo',
       data: {
         type: 'getCheckinProgress',
         openid: getApp().globalData.openid,
-        period: getApp().globalData.period || 7
+        period: getApp().globalData.period || 21
       }
     }).then(res => {
       if (res.result && res.result.success) {
@@ -55,6 +93,7 @@ Page({
         const completedDays = checkinDays.filter(item => item.completed).length;
         this.setData({
           checkinDays,
+          checkinWeeks: this.groupCheckinWeeks(checkinDays),
           completedDays,
           currentDay
         });
@@ -65,36 +104,45 @@ Page({
   },
 
   goToForm: function() {
-    // wx.cloud.callFunction({
-    //   name: 'cloudUserInfo',
-    //   data: {
-    //     type: 'userInfo'
-    //   }
-    // }).then(res => {
-    //   console.log(1, res)
-    // })
-
-    wx.login({
-      success: (res) => {
-        wx.showToast({
-          // title: res.code,
-          title: "模拟登录成功"
+    const app = getApp();
+    if (app.globalData.openid) {
+      this.loadCheckinProgress().then(() => {
+        wx.navigateTo({
+          url: `/pages/usage-form/index?day=${this.data.currentDay}`
         });
-        setTimeout(()=> {
-      wx.navigateTo({
-        url: `/pages/usage-form/index?day=${this.data.currentDay}`
       });
-        }, 2000)
-      }
-    })
+      return;
+    }
 
-    // if (!this.data.hasLogin) {
-      // this.login();
-    // } else {
-    //   wx.navigateTo({
-    //     url: `/pages/usage-form/index?day=${this.data.currentDay}`
-    //   });
-    // }
+    this.setData({ isLoading: true });
+    wx.cloud.callFunction({
+      name: 'cloudUserInfo',
+      data: {
+        type: 'getOpenId'
+      }
+    }).then(res => {
+      if (res.result && res.result.openid) {
+        app.globalData.openid = res.result.openid;
+        this.setData({
+          hasLogin: true,
+          isLoading: false
+        });
+        this.loadCheckinProgress().then(() => {
+          wx.navigateTo({
+            url: `/pages/usage-form/index?day=${this.data.currentDay}`
+          });
+        });
+      } else {
+        throw new Error('未获取到 openid');
+      }
+    }).catch(err => {
+      console.error('获取 openid 失败:', err);
+      wx.showToast({
+        title: '登录失败，请重试',
+        icon: 'none'
+      });
+      this.setData({ isLoading: false });
+    });
   },
 
   login: function() {

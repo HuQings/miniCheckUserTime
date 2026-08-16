@@ -6,8 +6,8 @@
       <view class="phone-icon">
         <view class="phone-inner"></view>
       </view>
-      <view class="app-name">手机使用检测</view>
-      <view class="app-slogan">了解你的数字生活</view>
+      <view class="app-name">短视频依赖评估</view>
+      <view class="app-slogan">记录三周使用变化</view>
     </view>
 
     <view class="user-info" wx:if="{{hasLogin && userInfo}}">
@@ -18,16 +18,21 @@
 
     <view class="checkin-section">
       <view class="section-title">
-        <text>{{period}}天打卡挑战</text>
+        <text>三周评估与干预</text>
         <text class="progress-text">{{completedDays}}/{{period}}</text>
       </view>
-      <view class="checkin-grid">
-        <view class="checkin-item {{item.completed ? 'completed' : ''}} {{item.current ? 'current' : ''}}" wx:for="{{checkinDays}}" wx:key="day">
-          <view class="day-label">第{{item.day}}天</view>
-          <view class="day-status">
-            <text wx:if="{{item.completed}}">✓</text>
-            <text wx:elif="{{item.current}}">●</text>
-            <text wx:else>○</text>
+      <view class="checkin-weeks">
+        <view class="week-row" wx:for="{{checkinWeeks}}" wx:for-item="weekItem" wx:key="week">
+          <view class="week-label">第{{weekItem.week}}周</view>
+          <view class="week-days">
+            <view class="checkin-item {{dayItem.completed ? 'completed' : ''}} {{dayItem.current ? 'current' : ''}}" wx:for="{{weekItem.days}}" wx:for-item="dayItem" wx:key="day">
+              <view class="day-number">{{dayItem.day}}</view>
+              <view class="day-status">
+                <text wx:if="{{dayItem.completed}}">✓</text>
+                <text wx:elif="{{dayItem.current}}">●</text>
+                <text wx:else>○</text>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -35,21 +40,31 @@
 
     <view class="features">
       <view class="feature-item">
-        <view class="feature-icon">📊</view>
-        <view class="feature-text">智能分析</view>
+        <view class="feature-icon feature-chart">
+          <view class="chart-bar bar-one"></view>
+          <view class="chart-bar bar-two"></view>
+          <view class="chart-bar bar-three"></view>
+        </view>
+        <view class="feature-text">基线评估</view>
       </view>
       <view class="feature-item">
-        <view class="feature-icon">💡</view>
-        <view class="feature-text">个性化建议</view>
+        <view class="feature-icon feature-light">
+          <view class="light-head"></view>
+          <view class="light-base"></view>
+        </view>
+        <view class="feature-text">干预反馈</view>
       </view>
       <view class="feature-item">
-        <view class="feature-icon">🎯</view>
-        <view class="feature-text">改善习惯</view>
+        <view class="feature-icon feature-target">
+          <view class="target-ring"></view>
+          <view class="target-dot"></view>
+        </view>
+        <view class="feature-text">持续追踪</view>
       </view>
     </view>
 
     <view class="description">
-      <text>只需花费2分钟，即可了解你的手机使用习惯</text>
+      <text>按天记录短视频使用频次、时长和体验</text>
     </view>
 
     <view class="btn-section">

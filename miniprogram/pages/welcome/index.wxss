@@ -1,12 +1,11 @@
 page {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 .welcome-container {
   position: relative;
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
 }
 
@@ -27,8 +26,9 @@ page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  padding: 60rpx 40rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 52rpx 40rpx 60rpx;
   animation: fadeIn 0.8s ease-out;
 }
 
@@ -47,7 +47,7 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 40rpx;
+  margin-bottom: 32rpx;
 }
 
 .phone-icon {
@@ -144,9 +144,10 @@ page {
 .checkin-section {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 24rpx;
-  padding: 32rpx;
-  margin-bottom: 40rpx;
+  padding: 28rpx;
+  margin-bottom: 36rpx;
   width: 100%;
+  box-sizing: border-box;
   backdrop-filter: blur(10rpx);
 }
 
@@ -166,21 +167,44 @@ page {
   color: #fff;
 }
 
-.checkin-grid {
+.checkin-weeks {
   display: flex;
-  justify-content: space-between;
-  gap: 12rpx;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.week-row {
+  display: grid;
+  grid-template-columns: 76rpx 1fr;
+  align-items: center;
+  column-gap: 16rpx;
+}
+
+.week-label {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.86);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10rpx;
 }
 
 .checkin-item {
-  flex: 1;
+  min-width: 0;
+  height: 76rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 16rpx;
-  padding: 20rpx 8rpx;
+  border-radius: 18rpx;
+  padding: 6rpx 0;
   transition: all 0.3s;
+  box-sizing: border-box;
 }
 
 .checkin-item.completed {
@@ -192,20 +216,23 @@ page {
   border: 2rpx solid rgba(255, 215, 0, 0.6);
 }
 
-.day-label {
-  font-size: 22rpx;
+.day-number {
+  font-size: 20rpx;
   color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 12rpx;
+  line-height: 1;
+  margin-bottom: 6rpx;
+  font-weight: 600;
 }
 
 .day-status {
-  font-size: 36rpx;
+  font-size: 26rpx;
   color: rgba(255, 255, 255, 0.9);
+  line-height: 1;
 }
 
 .checkin-item.completed .day-status {
   color: #4cd964;
-  font-size: 40rpx;
+  font-size: 28rpx;
 }
 
 .checkin-item.current .day-status {
@@ -227,7 +254,7 @@ page {
   justify-content: space-between;
   width: 100%;
   max-width: 500rpx;
-  margin-bottom: 60rpx;
+  margin-bottom: 48rpx;
 }
 
 .feature-item {
@@ -238,7 +265,108 @@ page {
 }
 
 .feature-icon {
-  font-size: 64rpx;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2rpx solid rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.feature-chart {
+  align-items: flex-end;
+  gap: 8rpx;
+  padding-bottom: 22rpx;
+}
+
+.chart-bar {
+  width: 10rpx;
+  border-radius: 8rpx 8rpx 3rpx 3rpx;
+  background: #fff;
+}
+
+.bar-one {
+  height: 24rpx;
+  opacity: 0.78;
+}
+
+.bar-two {
+  height: 36rpx;
+  opacity: 0.9;
+}
+
+.bar-three {
+  height: 50rpx;
+}
+
+.feature-light {
+  flex-direction: column;
+}
+
+.light-head {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50% 50% 44% 44%;
+  background: #fff;
+  position: relative;
+}
+
+.light-head::after {
+  content: '';
+  position: absolute;
+  left: 12rpx;
+  bottom: -10rpx;
+  width: 14rpx;
+  height: 14rpx;
+  background: #fff;
+  transform: rotate(45deg);
+  border-radius: 2rpx;
+}
+
+.light-base {
+  width: 30rpx;
+  height: 12rpx;
+  margin-top: 10rpx;
+  border-radius: 4rpx;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.feature-target {
+  border-radius: 50%;
+}
+
+.target-ring {
+  width: 48rpx;
+  height: 48rpx;
+  border: 8rpx solid #fff;
+  border-radius: 50%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.target-ring::after {
+  content: '';
+  position: absolute;
+  left: 8rpx;
+  top: 8rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border: 5rpx solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.target-dot {
+  position: absolute;
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #fff;
 }
 
 .feature-text {
@@ -250,7 +378,7 @@ page {
   font-size: 28rpx;
   color: rgba(255, 255, 255, 0.85);
   text-align: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 48rpx;
   line-height: 1.6;
 }
 
