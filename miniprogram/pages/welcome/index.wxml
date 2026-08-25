@@ -7,7 +7,7 @@
         <view class="phone-inner"></view>
       </view>
       <view class="app-name">短视频依赖评估</view>
-      <view class="app-slogan">记录三周使用变化</view>
+      <view class="app-slogan">完成24天评估与干预</view>
     </view>
 
     <view class="user-info" wx:if="{{hasLogin && userInfo}}">
@@ -18,7 +18,7 @@
 
     <view class="checkin-section">
       <view class="section-title">
-        <text>三周评估与干预</text>
+        <text>24天评估与干预</text>
         <text class="progress-text">{{completedDays}}/{{period}}</text>
       </view>
       <view class="checkin-weeks">
@@ -68,15 +68,30 @@
     </view>
 
     <view class="btn-section">
-      <button class="start-btn" bindtap="goToForm" disabled="{{isLoading}}">
-        <text class="btn-text">{{isLoading ? '登录中...' : (hasLogin ? '继续检测' : '开始检测')}}</text>
-        <text class="btn-arrow" wx:if="{{!isLoading}}">→</text>
+      <button class="start-btn" bindtap="goToForm" disabled="{{isLoading || (hasLogin && !canCheckinToday)}}">
+        <text class="btn-text">{{isLoading ? '登录中...' : (experimentCompleted ? '已完成全部评估' : (todayCompleted ? '今日已完成' : (hasLogin ? '继续检测' : '开始检测')))}}</text>
+        <text class="btn-arrow" wx:if="{{!isLoading && canCheckinToday}}">→</text>
       </button>
+    </view>
+  </view>
 
-      <button class="history-btn" bindtap="goToHistory" wx:if="{{hasLogin && completedDays > 0}}">
-        <text class="btn-text">查看记录</text>
-        <text class="btn-arrow">→</text>
-      </button>
+  <view class="consent-mask" wx:if="{{showInitialConsent}}" bindtap="onInitialConsentCancel">
+    <view class="consent-modal" catchtap="onContentTap">
+      <view class="consent-modal-title">实验说明</view>
+      <scroll-view class="consent-modal-body" scroll-y>
+        <view class="consent-project">欢迎来到{{projectName}}</view>
+        <view class="consent-project-number">项目编号：{{projectNumber}}</view>
+        <view class="consent-description">您将参加为期24天（前3天为基线期，后21天为干预期）的大学生短视频依赖心理干预实验活动。</view>
+        <view class="consent-statement">“{{initialConsentText}}”</view>
+        <view class="consent-check-row {{initialConsentChecked ? 'checked' : ''}}" bindtap="onInitialConsentToggle">
+          <view class="consent-checkbox">{{initialConsentChecked ? '✓' : ''}}</view>
+          <text>我已阅读并同意</text>
+        </view>
+      </scroll-view>
+      <view class="consent-actions">
+        <button class="consent-btn consent-cancel" bindtap="onInitialConsentCancel" disabled="{{isConsentSubmitting}}">暂不参加</button>
+        <button class="consent-btn consent-confirm" bindtap="onInitialConsentConfirm" disabled="{{isConsentSubmitting}}">{{isConsentSubmitting ? '确认中...' : '同意并开始'}}</button>
+      </view>
     </view>
   </view>
 </view>

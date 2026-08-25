@@ -7,12 +7,22 @@ Page({
     checkinWeeks: [],
     completedDays: 0,
     currentDay: 1,
-    period: 21
+    todayCompleted: false,
+    canCheckinToday: true,
+    experimentCompleted: false,
+    projectName: '国家级大创项目实验平台',
+    projectNumber: '202514390020',
+    initialConsentText: '我同意参加该项目为期24天的实验活动，我承诺会全程参与。',
+    showInitialConsent: false,
+    initialConsentChecked: false,
+    isConsentSubmitting: false,
+    period: 24
   },
 
   onLoad: function (options) {
-    const period = getApp().globalData.period || 21;
-    this.setData({ period });
+    const period = getApp().globalData.period || 24;
+    const hasLogin = Boolean(getApp().globalData.openid);
+    this.setData({ period, hasLogin });
     this.initCheckinDays();
     this.loadSurveyConfig();
   },
@@ -25,9 +35,15 @@ Page({
       }
     }).then(res => {
       if (res.result && res.result.data && res.result.data.period) {
-        const period = res.result.data.period;
+        const config = res.result.data;
+        const period = config.period;
         getApp().globalData.period = period;
-        this.setData({ period }, () => {
+        this.setData({
+          period,
+          projectName: config.projectName || this.data.projectName,
+          projectNumber: config.projectNumber || this.data.projectNumber,
+          initialConsentText: config.consentText || this.data.initialConsentText
+        }, () => {
           this.initCheckinDays();
           if (getApp().globalData.openid) {
             this.loadCheckinProgress();
@@ -62,14 +78,12 @@ Page({
   },
 
   groupCheckinWeeks: function(checkinDays) {
-    const weeks = [];
-    for (let i = 0; i < checkinDays.length; i += 7) {
-      weeks.push({
-        week: Math.floor(i / 7) + 1,
-        days: checkinDays.slice(i, i + 7)
-      });
-    }
-    return weeks;
+    return [
+      { week: 1, days: checkinDays.slice(0, 3) },
+      { week: 2, days: checkinDays.slice(3, 10) },
+      { week: 3, days: checkinDays.slice(10, 17) },
+      { week: 4, days: checkinDays.slice(17, 24) }
+    ].filter(item => item.days.length > 0);
   },
 
   loadCheckinProgress: function() {
@@ -78,11 +92,11 @@ Page({
       data: {
         type: 'getCheckinProgress',
         openid: getApp().globalData.openid,
-        period: getApp().globalData.period || 21
+        period: getApp().globalData.period || 24
       }
     }).then(res => {
       if (res.result && res.result.success) {
-        const { records, currentDay } = res.result.data;
+        const { records, currentDay, todayCompleted, canCheckinToday, experimentCompleted } = res.result.data;
         const checkinDays = this.data.checkinDays.map(item => {
           return {
             ...item,
@@ -95,7 +109,10 @@ Page({
           checkinDays,
           checkinWeeks: this.groupCheckinWeeks(checkinDays),
           completedDays,
-          currentDay
+          currentDay,
+          todayCompleted: Boolean(todayCompleted),
+          canCheckinToday: canCheckinToday !== false,
+          experimentCompleted: Boolean(experimentCompleted)
         });
       }
     }).catch(err => {
@@ -106,11 +123,7 @@ Page({
   goToForm: function() {
     const app = getApp();
     if (app.globalData.openid) {
-      this.loadCheckinProgress().then(() => {
-        wx.navigateTo({
-          url: `/pages/usage-form/index?day=${this.data.currentDay}`
-        });
-      });
+      this.prepareFormEntry();
       return;
     }
 
@@ -127,11 +140,7 @@ Page({
           hasLogin: true,
           isLoading: false
         });
-        this.loadCheckinProgress().then(() => {
-          wx.navigateTo({
-            url: `/pages/usage-form/index?day=${this.data.currentDay}`
-          });
-        });
+        this.prepareFormEntry();
       } else {
         throw new Error('未获取到 openid');
       }
@@ -142,6 +151,88 @@ Page({
         icon: 'none'
       });
       this.setData({ isLoading: false });
+    });
+  },
+
+  prepareFormEntry: function() {
+    this.loadCheckinProgress().then(() => {
+      if (this.data.experimentCompleted) {
+        wx.showToast({ title: '24天评估已全部完成', icon: 'none' });
+        return;
+      }
+      if (!this.data.canCheckinToday) {
+        wx.showToast({ title: '今日检查已完成，请明天再来', icon: 'none' });
+        return;
+      }
+      if (this.data.currentDay !== 1 || this.data.completedDays > 0) {
+        this.navigateToCurrentForm();
+        return;
+      }
+
+      wx.cloud.callFunction({
+        name: 'cloudUserInfo',
+        data: { type: 'getInitialConsentStatus' }
+      }).then(res => {
+        if (res.result && res.result.success && res.result.data.accepted) {
+          this.navigateToCurrentForm();
+          return;
+        }
+        this.setData({
+          showInitialConsent: true,
+          initialConsentChecked: false
+        });
+      }).catch(err => {
+        console.error('获取知情同意状态失败:', err);
+        wx.showToast({ title: '加载失败，请重试', icon: 'none' });
+      });
+    });
+  },
+
+  navigateToCurrentForm: function() {
+    wx.navigateTo({
+      url: `/pages/usage-form/index?day=${this.data.currentDay}`
+    });
+  },
+
+  onInitialConsentToggle: function() {
+    this.setData({ initialConsentChecked: !this.data.initialConsentChecked });
+  },
+
+  onContentTap: function() {},
+
+  onInitialConsentCancel: function() {
+    if (this.data.isConsentSubmitting) return;
+    this.setData({
+      showInitialConsent: false,
+      initialConsentChecked: false
+    });
+  },
+
+  onInitialConsentConfirm: function() {
+    if (!this.data.initialConsentChecked) {
+      wx.showToast({ title: '请阅读并确认知情同意', icon: 'none' });
+      return;
+    }
+    if (this.data.isConsentSubmitting) return;
+
+    this.setData({ isConsentSubmitting: true });
+    wx.cloud.callFunction({
+      name: 'cloudUserInfo',
+      data: { type: 'acceptInitialConsent' }
+    }).then(res => {
+      if (!res.result || !res.result.success) {
+        throw new Error((res.result && res.result.errMsg) || '确认失败');
+      }
+      this.setData({
+        showInitialConsent: false,
+        initialConsentChecked: false,
+        isConsentSubmitting: false
+      });
+      this.navigateToCurrentForm();
+    }).catch(err => {
+      console.error('保存知情同意失败:', err);
+      this.setData({ isConsentSubmitting: false });
+      wx.showToast({ title: '确认失败，请重试', icon: 'none' });
     });
   },
 
@@ -202,12 +293,6 @@ Page({
         icon: 'none'
       });
       this.setData({ isLoading: false });
-    });
-  },
-
-  goToHistory: function() {
-    wx.navigateTo({
-      url: '/pages/history/index'
     });
   }
 });

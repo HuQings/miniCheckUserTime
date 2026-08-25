@@ -1,7 +1,12 @@
 <view class="form-container">
   <view class="header">
     <view class="day-badge">{{dayMeta.phase}}</view>
-    <view class="header-icon">📱</view>
+    <view class="header-icon">
+      <view class="header-phone">
+        <view class="phone-speaker"></view>
+        <view class="phone-home"></view>
+      </view>
+    </view>
     <view class="header-title">{{dayMeta.title}}短视频调查</view>
     <view class="header-subtitle">记录今日短视频使用与体验</view>
     
@@ -18,26 +23,81 @@
       <view class="section-title">基础信息</view>
 
       <view class="form-item">
-        <view class="item-label"><text class="label-text">性别</text></view>
+        <view class="item-label"><text class="label-text">您的组号是：</text></view>
+        <view class="choice-row">
+          <view class="choice-pill {{formData.group === item.value ? 'selected' : ''}}" wx:for="{{groupOptions}}" wx:key="value" data-field="group" data-value="{{item.value}}" bindtap="onChoiceTap">{{item.label}}</view>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="item-label"><text class="question-no">1.</text><text class="label-text">性别</text></view>
         <view class="choice-row">
           <view class="choice-pill {{formData.gender === item ? 'selected' : ''}}" wx:for="{{genderOptions}}" wx:key="*this" data-field="gender" data-value="{{item}}" bindtap="onChoiceTap">{{item}}</view>
         </view>
       </view>
 
       <view class="form-item">
-        <view class="item-label"><text class="label-text">年级</text></view>
+        <view class="item-label"><text class="question-no">2.</text><text class="label-text">年级</text></view>
         <view class="choice-row">
           <view class="choice-pill {{formData.grade === item ? 'selected' : ''}}" wx:for="{{gradeOptions}}" wx:key="*this" data-field="grade" data-value="{{item}}" bindtap="onChoiceTap">{{item}}</view>
         </view>
       </view>
+
+      <view class="form-item">
+        <view class="item-label"><text class="question-no">3.</text><text class="label-text">您刷短视频用时最多的是：</text></view>
+        <view class="choice-row">
+          <view class="choice-pill {{formData.primaryUsage === item ? 'selected' : ''}}" wx:for="{{primaryUsageOptions}}" wx:key="*this" data-field="primaryUsage" data-value="{{item}}" bindtap="onChoiceTap">{{item}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-section video-section" wx:if="{{currentDay > 3 && isInterventionGroup}}">
+      <view class="section-title">今日干预视频</view>
+      <view class="video-progress-row">
+        <text>请选择一个未观看的视频</text>
+        <text class="video-count">已观看 {{watchedVideoCount}}/21</text>
+      </view>
+      <scroll-view class="video-picker" scroll-y>
+        <view
+          class="video-choice {{item.watched ? 'watched' : ''}} {{selectedVideoIndex === item.index ? 'selected' : ''}}"
+          wx:for="{{interventionVideos}}"
+          wx:key="index"
+          data-index="{{item.index}}"
+          bindtap="onVideoSelect"
+        >
+          <view class="video-choice-index">{{item.index}}</view>
+          <view class="video-choice-title">{{item.title}}</view>
+          <view class="video-choice-state">{{item.watched ? '已观看' : (selectedVideoIndex === item.index ? '已选择' : '选择')}}</view>
+        </view>
+      </scroll-view>
+      <view class="video-loading" wx:if="{{isVideoLoading}}">正在加载视频...</view>
+      <block wx:if="{{interventionVideo}}">
+        <view class="video-title">已选择：{{interventionVideo.title}}</view>
+        <video
+          id="intervention-player"
+          class="intervention-video"
+          src="{{interventionVideo.url}}"
+          controls="{{false}}"
+          show-play-btn="{{false}}"
+          show-fullscreen-btn="{{false}}"
+          show-center-play-btn="{{true}}"
+          enable-progress-gesture="{{false}}"
+          bindplay="onVideoPlay"
+          bindended="onVideoEnded"
+        ></video>
+        <view class="video-status {{videoCompleted ? 'completed' : ''}}">
+          {{videoCompleted ? '今日视频已观看完成' : (videoStarted ? '视频播放中，请完整观看' : '点击播放后需完整观看，不能拖动进度')}}
+        </view>
+      </block>
+      <button class="retry-video-btn" wx:if="{{!isVideoLoading && selectedVideoIndex && !interventionVideo}}" bindtap="onRetryVideo">重新加载视频</button>
     </view>
 
     <view class="form-section">
       <view class="section-title">短视频使用数据</view>
 
-      <view class="form-item" wx:for="{{usageFields}}" wx:key="title">
+      <view class="form-item" wx:for="{{usageFields}}" wx:for-index="usageIndex" wx:key="title">
         <view class="item-label">
-          <text class="label-icon">▶</text>
+          <text class="question-no">{{(currentDay === 1 ? 4 : 1) + usageIndex}}.</text>
           <text class="label-text">{{item.title}}</text>
         </view>
         <view class="input-wrapper">
@@ -66,12 +126,39 @@
       </view>
     </view>
 
-    <view class="form-section" wx:if="{{currentDay === period}}">
+    <view class="form-section" wx:if="{{currentDay === 3}}">
+      <view class="section-title">改变准备度评估</view>
+      <view class="form-item scale-item">
+        <view class="item-label scale-label">
+          <text class="question-no">10.</text>
+          <text class="label-text">基于跨理论模型（TTM），请评估你当前对减少短视频/手机依赖的行为改变阶段（单选）：</text>
+        </view>
+        <view class="option-list">
+          <view class="option-item {{formData.readiness === item.value ? 'selected' : ''}}" wx:for="{{readinessOptions}}" wx:key="value" data-field="readiness" data-value="{{item.value}}" bindtap="onChoiceTap">{{item.label}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-section consent-section" wx:if="{{currentDay === 3}}">
+      <view class="section-title">知情同意</view>
+      <view class="consent-text">“{{consentText}}”</view>
+      <view class="consent-choice {{formData.consent === 'agreed' ? 'selected' : ''}}" data-field="consent" data-value="agreed" bindtap="onChoiceTap">
+        <view class="checkbox">{{formData.consent === 'agreed' ? '✓' : ''}}</view>
+        <text>我已阅读并同意</text>
+      </view>
+    </view>
+
+    <view class="form-section" wx:if="{{currentDay === period && isInterventionGroup}}">
       <view class="section-title">方案建议</view>
       <view class="form-item">
-        <view class="item-label"><text class="label-text">{{feedbackQuestion}}</text></view>
+        <view class="item-label"><text class="question-no">11.</text><text class="label-text">{{feedbackQuestion}}</text></view>
         <textarea class="feedback-input" placeholder="可选填" value="{{formData.feedback}}" data-field="feedback" bindinput="onInputChange"></textarea>
       </view>
+      <view class="closing-thanks"><text class="question-no">12.</text>{{closingThanks}}</view>
+    </view>
+
+    <view class="form-section" wx:if="{{currentDay === period && !isInterventionGroup}}">
+      <view class="closing-thanks">{{closingThanks}}</view>
     </view>
   </view>
 
@@ -86,7 +173,11 @@
     show="{{showModal}}" 
     adviceData="{{adviceData}}"
     period="{{period}}"
+    is-submitting="{{isReflectionSubmitting}}"
     bind:close="onCloseModal"
+    bind:confirm="onFinish"
+    bind:reflectionclose="onReflectionClose"
+    bind:reflectionsubmit="onReflectionSubmit"
     bind:retry="onRetry"
     bind:finish="onFinish"
   />

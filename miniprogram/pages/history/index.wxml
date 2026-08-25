@@ -1,8 +1,14 @@
 <view class="history-container">
   <view class="header">
-    <view class="header-icon">📊</view>
-    <view class="header-title">三周调查记录</view>
-    <view class="header-subtitle">查看短视频使用与评估结果</view>
+    <view class="header-icon">
+      <view class="header-chart">
+        <view class="header-chart-bar bar-short"></view>
+        <view class="header-chart-bar bar-medium"></view>
+        <view class="header-chart-bar bar-tall"></view>
+      </view>
+    </view>
+    <view class="header-title">24天打卡记录</view>
+    <view class="header-subtitle">查看每日短视频使用与干预完成情况</view>
   </view>
 
   <view class="history-content" wx:if="{{records.length > 0}}">
@@ -12,12 +18,8 @@
         <view class="stat-label">已完成天数</view>
       </view>
       <view class="stat-card">
-        <view class="stat-value">{{avgScore}}</view>
-        <view class="stat-label">平均得分</view>
-      </view>
-      <view class="stat-card">
         <view class="stat-value">{{avgHours}}</view>
-        <view class="stat-label">日均短视频</view>
+        <view class="stat-label">日均短视频时长</view>
       </view>
     </view>
 
@@ -27,41 +29,41 @@
       <view class="record-item" wx:for="{{records}}" wx:key="_id">
         <view class="record-header">
           <view class="record-day">第{{item.day}}天</view>
-          <view class="record-date">{{item.createTime}}</view>
+          <view class="record-date">{{item.displayCreateTime}}</view>
         </view>
         
-        <view class="record-score">
-          <view class="score-label">得分</view>
-          <view class="score-value score-{{getScoreLevel(item.score)}}">{{item.score}}</view>
-        </view>
-
         <view class="record-details">
           <view class="detail-row">
             <view class="detail-label">短视频总时长</view>
             <view class="detail-value">{{item.avgDailyHours}} 小时</view>
           </view>
           <view class="detail-row">
-            <view class="detail-label">依赖分组</view>
-            <view class="detail-value">{{item.dependencyLevel || '未评估'}}</view>
+            <view class="detail-label">短视频总频次</view>
+            <view class="detail-value">{{item.totalShortVideoCount || 0}} 次</view>
           </view>
+        </view>
+
+        <view class="intervention-record" wx:if="{{item.interventionVideoTitle}}">
+          <view class="intervention-label">完成的干预视频</view>
+          <view class="intervention-title">{{item.interventionVideoTitle}}</view>
         </view>
 
         <view class="record-usage">
           <view class="usage-title">短视频分类</view>
           <view class="usage-grid">
             <view class="usage-item">
-              <view class="usage-icon">▶</view>
               <view class="usage-value">{{item.usageData.leisureHours}}h</view>
+              <view class="usage-count">{{item.usageData.leisureCount || 0}}次</view>
               <view class="usage-label">休闲</view>
             </view>
             <view class="usage-item">
-              <view class="usage-icon">📘</view>
               <view class="usage-value">{{item.usageData.studyHours}}h</view>
+              <view class="usage-count">{{item.usageData.studyCount || 0}}次</view>
               <view class="usage-label">学习</view>
             </view>
             <view class="usage-item">
-              <view class="usage-icon">💬</view>
               <view class="usage-value">{{item.usageData.socialHours}}h</view>
+              <view class="usage-count">{{item.usageData.socialCount || 0}}次</view>
               <view class="usage-label">社交</view>
             </view>
           </view>
@@ -71,7 +73,13 @@
   </view>
 
   <view class="empty-state" wx:else>
-    <view class="empty-icon">📝</view>
+    <view class="empty-icon">
+      <view class="empty-document">
+        <view class="document-line line-long"></view>
+        <view class="document-line line-medium"></view>
+        <view class="document-line line-short"></view>
+      </view>
+    </view>
     <view class="empty-text">暂无打卡记录</view>
     <view class="empty-desc">开始填写短视频使用调查吧</view>
     <button class="start-btn" bindtap="goToWelcome">

@@ -1,5 +1,5 @@
 page {
-  background-color: #f5f7fa;
+  background-color: #fff7f9;
   min-height: 100vh;
 }
 
@@ -8,7 +8,7 @@ page {
 }
 
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #e58fa8 0%, #d56f91 100%);
   padding: 60rpx 40rpx 80rpx;
   display: flex;
   flex-direction: column;
@@ -17,8 +17,43 @@ page {
 }
 
 .header-icon {
-  font-size: 80rpx;
-  margin-bottom: 20rpx;
+  width: 96rpx;
+  height: 96rpx;
+  margin-bottom: 24rpx;
+  border-radius: 30rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2rpx solid rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.header-chart {
+  height: 52rpx;
+  display: flex;
+  align-items: flex-end;
+  gap: 9rpx;
+}
+
+.header-chart-bar {
+  width: 11rpx;
+  border-radius: 6rpx 6rpx 2rpx 2rpx;
+  background: #fff;
+}
+
+.header-chart .bar-short {
+  height: 24rpx;
+  opacity: 0.68;
+}
+
+.header-chart .bar-medium {
+  height: 38rpx;
+  opacity: 0.84;
+}
+
+.header-chart .bar-tall {
+  height: 52rpx;
 }
 
 .header-title {
@@ -42,7 +77,7 @@ page {
 
 .stats-section {
   display: flex;
-  justify-content: space-between;
+  gap: 16rpx;
   margin-bottom: 24rpx;
 }
 
@@ -54,14 +89,14 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.08);
-  margin: 0 8rpx;
+  box-shadow: 0 8rpx 24rpx rgba(213, 111, 145, 0.1);
+  margin: 0;
 }
 
 .stat-value {
   font-size: 40rpx;
   font-weight: bold;
-  color: #667eea;
+  color: #c95f82;
   margin-bottom: 8rpx;
 }
 
@@ -74,7 +109,7 @@ page {
   background: #fff;
   border-radius: 24rpx;
   padding: 32rpx;
-  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.08);
+  box-shadow: 0 8rpx 24rpx rgba(213, 111, 145, 0.1);
 }
 
 .section-title {
@@ -83,7 +118,7 @@ page {
   color: #333;
   margin-bottom: 24rpx;
   padding-left: 8rpx;
-  border-left: 6rpx solid #667eea;
+  border-left: 6rpx solid #e58fa8;
 }
 
 .record-item {
@@ -115,43 +150,32 @@ page {
   color: #999;
 }
 
-.record-score {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff;
-  padding: 16rpx 20rpx;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
-}
-
-.score-label {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.score-value {
-  font-size: 36rpx;
-  font-weight: bold;
-}
-
-.score-high {
-  color: #4cd964;
-}
-
-.score-medium {
-  color: #ffd700;
-}
-
-.score-low {
-  color: #ff3b30;
-}
-
 .record-details {
   background: #fff;
   border-radius: 12rpx;
   padding: 16rpx 20rpx;
   margin-bottom: 16rpx;
+}
+
+.intervention-record {
+  margin-bottom: 16rpx;
+  padding: 18rpx 20rpx;
+  border: 2rpx solid #f3d7df;
+  border-radius: 12rpx;
+  background: #fff9fb;
+}
+
+.intervention-label {
+  margin-bottom: 8rpx;
+  color: #999;
+  font-size: 22rpx;
+}
+
+.intervention-title {
+  color: #b84f73;
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .detail-row {
@@ -204,16 +228,17 @@ page {
   border-radius: 12rpx;
 }
 
-.usage-icon {
-  font-size: 32rpx;
-  margin-bottom: 8rpx;
-}
-
 .usage-value {
   font-size: 26rpx;
   font-weight: 600;
   color: #333;
   margin-bottom: 4rpx;
+}
+
+.usage-count {
+  margin-bottom: 4rpx;
+  color: #777;
+  font-size: 22rpx;
 }
 
 .usage-label {
@@ -230,8 +255,47 @@ page {
 }
 
 .empty-icon {
-  font-size: 120rpx;
-  margin-bottom: 24rpx;
+  width: 112rpx;
+  height: 112rpx;
+  margin-bottom: 32rpx;
+  border-radius: 34rpx;
+  background: #f8cfda;
+  border: 2rpx solid rgba(229, 143, 168, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.empty-document {
+  width: 58rpx;
+  height: 72rpx;
+  padding: 16rpx 12rpx;
+  border-radius: 10rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 20rpx rgba(201, 95, 130, 0.16);
+  box-sizing: border-box;
+}
+
+.document-line {
+  height: 5rpx;
+  margin-bottom: 9rpx;
+  border-radius: 3rpx;
+  background: #e58fa8;
+}
+
+.document-line.line-long {
+  width: 34rpx;
+}
+
+.document-line.line-medium {
+  width: 27rpx;
+  opacity: 0.78;
+}
+
+.document-line.line-short {
+  width: 20rpx;
+  opacity: 0.58;
 }
 
 .empty-text {
@@ -250,7 +314,7 @@ page {
 .start-btn {
   width: 300rpx;
   height: 88rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #e58fa8 0%, #d56f91 100%);
   border-radius: 44rpx;
   display: flex;
   align-items: center;
@@ -261,7 +325,7 @@ page {
   padding: 0;
   margin: 0;
   border: none;
-  box-shadow: 0 12rpx 32rpx rgba(102, 126, 234, 0.4);
+  box-shadow: 0 12rpx 32rpx rgba(213, 111, 145, 0.34);
 }
 
 .start-btn::after {

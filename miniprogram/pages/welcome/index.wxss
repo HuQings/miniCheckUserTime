@@ -15,7 +15,7 @@ page {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #673AB7 100%, #f093fb 0%);
+  background: linear-gradient(145deg, #f3b5c5 0%, #e58fa8 48%, #d56f91 100%);
   z-index: 0;
 }
 
@@ -208,12 +208,12 @@ page {
 }
 
 .checkin-item.completed {
-  background: rgba(76, 217, 100, 0.3);
+  background: rgba(184, 79, 115, 0.58);
 }
 
 .checkin-item.current {
-  background: rgba(255, 215, 0, 0.3);
-  border: 2rpx solid rgba(255, 215, 0, 0.6);
+  background: rgba(255, 240, 244, 0.62);
+  border: 2rpx solid rgba(255, 255, 255, 0.78);
 }
 
 .day-number {
@@ -231,12 +231,12 @@ page {
 }
 
 .checkin-item.completed .day-status {
-  color: #4cd964;
+  color: #fff;
   font-size: 28rpx;
 }
 
 .checkin-item.current .day-status {
-  color: #ffd700;
+  color: #c95f82;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -392,13 +392,14 @@ page {
   width: 80%;
   max-width: 500rpx;
   height: 96rpx;
-  background: #fff;
   border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   padding: 0;
   margin: 0;
+  background: #fff;
   border: none;
   box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.2);
   transition: transform 0.2s, box-shadow 0.2s;
@@ -413,16 +414,26 @@ page {
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
 }
 
+.start-btn[disabled] {
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.start-btn[disabled] .btn-text {
+  color: rgba(126, 61, 84, 0.62);
+}
+
 .btn-text {
   font-size: 34rpx;
   font-weight: 600;
-  color: #667eea;
+  color: #c95f82;
   margin-right: 12rpx;
 }
 
 .btn-arrow {
   font-size: 40rpx;
-  color: #667eea;
+  color: #c95f82;
   transition: transform 0.2s;
 }
 
@@ -430,38 +441,132 @@ page {
   transform: translateX(8rpx);
 }
 
-.history-btn {
-  width: 80%;
-  max-width: 500rpx;
-  height: 88rpx;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 44rpx;
+.consent-mask {
+  position: fixed;
+  z-index: 10000;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 40rpx;
+  background: rgba(45, 35, 39, 0.56);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  margin: 16rpx 0 0 0;
-  border: 2rpx solid rgba(255, 255, 255, 0.4);
-  transition: transform 0.2s, background 0.2s;
+  box-sizing: border-box;
 }
 
-.history-btn::after {
+.consent-modal {
+  width: 100%;
+  max-width: 640rpx;
+  max-height: 82vh;
+  border-radius: 24rpx;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24rpx 64rpx rgba(77, 35, 50, 0.22);
+}
+
+.consent-modal-title {
+  padding: 34rpx 36rpx 26rpx;
+  border-bottom: 2rpx solid #f6e8ec;
+  color: #333;
+  font-size: 34rpx;
+  font-weight: 700;
+  text-align: center;
+}
+
+.consent-modal-body {
+  flex: 1;
+  min-height: 0;
+  padding: 32rpx 36rpx;
+  box-sizing: border-box;
+}
+
+.consent-project {
+  color: #333;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.consent-project-number {
+  margin: 10rpx 0 22rpx;
+  color: #c95f82;
+  font-size: 25rpx;
+}
+
+.consent-description,
+.consent-statement {
+  color: #555;
+  font-size: 27rpx;
+  line-height: 1.75;
+}
+
+.consent-statement {
+  margin-top: 26rpx;
+  padding: 22rpx;
+  border-radius: 14rpx;
+  background: #fff4f7;
+}
+
+.consent-check-row {
+  margin-top: 28rpx;
+  color: #555;
+  font-size: 27rpx;
+  display: flex;
+  align-items: center;
+}
+
+.consent-checkbox {
+  width: 42rpx;
+  height: 42rpx;
+  margin-right: 16rpx;
+  border: 2rpx solid #d8bec6;
+  border-radius: 8rpx;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.consent-check-row.checked .consent-checkbox {
+  border-color: #e58fa8;
+  background: #e58fa8;
+}
+
+.consent-actions {
+  padding: 24rpx 30rpx calc(28rpx + env(safe-area-inset-bottom));
+  border-top: 2rpx solid #f6e8ec;
+  display: flex;
+  gap: 16rpx;
+}
+
+.consent-btn {
+  flex: 1;
+  height: 84rpx;
+  padding: 0;
+  margin: 0;
+  border-radius: 42rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.consent-btn::after {
   border: none;
 }
 
-.history-btn:active {
-  transform: scale(0.96);
-  background: rgba(255, 255, 255, 0.35);
+.consent-cancel {
+  background: #f1f1f1;
+  color: #666;
 }
 
-.history-btn .btn-text {
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #fff;
-  margin-right: 8rpx;
-}
-
-.history-btn .btn-arrow {
-  font-size: 36rpx;
+.consent-confirm {
+  background: linear-gradient(135deg, #e58fa8 0%, #d56f91 100%);
   color: #fff;
 }

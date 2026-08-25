@@ -1,14 +1,25 @@
+const padTimePart = value => String(value).padStart(2, '0');
+
+const formatRecordTime = value => {
+  const source = value && value.$date ? value.$date : value;
+  const date = new Date(source);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return `${date.getFullYear()}-${padTimePart(date.getMonth() + 1)}-${padTimePart(date.getDate())} ${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}`;
+};
+
 Page({
   data: {
     records: [],
     completedDays: 0,
-    avgScore: 0,
     avgHours: 0,
-    period: 21
+    period: 24
   },
 
   onLoad: function (options) {
-    const period = getApp().globalData.period || 21;
+    const period = getApp().globalData.period || 24;
     this.setData({ period });
     this.loadSurveyConfig();
   },
@@ -42,25 +53,25 @@ Page({
       data: {
         type: 'getCheckinProgress',
         openid: getApp().globalData.openid,
-        period: getApp().globalData.period || 21
+        period: getApp().globalData.period || 24
       }
     }).then(res => {
       wx.hideLoading();
       
       if (res.result && res.result.success) {
         const { records } = res.result.data;
+        const displayRecords = records.map(record => ({
+          ...record,
+          displayCreateTime: formatRecordTime(record.createTime)
+        }));
         const completedDays = records.length;
-        const avgScore = completedDays > 0 
-          ? Math.round(records.reduce((sum, r) => sum + (r.score || 0), 0) / completedDays)
-          : 0;
         const avgHours = completedDays > 0
           ? (records.reduce((sum, r) => sum + (r.avgDailyHours || 0), 0) / completedDays).toFixed(1)
           : '0.0';
 
         this.setData({
-          records: records,
+          records: displayRecords,
           completedDays: completedDays,
-          avgScore: avgScore,
           avgHours: avgHours
         });
       }
@@ -72,12 +83,6 @@ Page({
         icon: 'none'
       });
     });
-  },
-
-  getScoreLevel: function(score) {
-    if (score >= 85) return 'high';
-    if (score >= 70) return 'medium';
-    return 'low';
   },
 
   goToWelcome: function() {
