@@ -6,7 +6,7 @@ cloud.init({
 const db = cloud.database();
 const SURVEY_VERSION = 'short-video-v4';
 const INTERVENTION_GROUP = '1';
-const DAILY_CHECKIN_LIMIT_ENABLED = false;
+const DAILY_CHECKIN_LIMIT_ENABLED = true;
 const INITIAL_CONSENT_VERSION = 'v2';
 const INTERVENTION_VIDEO_FILE_ID_PREFIX = 'cloud://checkusetime-d0goggmcg60d6136e.6368-checkusetime-d0goggmcg60d6136e-1425308418/intervention-videos';
 const INTERVENTION_VIDEO_TITLES = [
